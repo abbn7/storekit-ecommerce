@@ -1,0 +1,91 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+
+export default function NewProductPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      product: {
+        name: formData.get("name"),
+        slug: formData.get("slug"),
+        description: formData.get("description"),
+        price: Math.round(parseFloat(formData.get("price") as string) * 100),
+        compareAtPrice: formData.get("compareAtPrice")
+          ? Math.round(parseFloat(formData.get("compareAtPrice") as string) * 100)
+          : null,
+        sku: formData.get("sku"),
+        isActive: true,
+        isFeatured: false,
+        isNew: true,
+      },
+    };
+
+    try {
+      const res = await fetch("/api/admin/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        router.push("/admin/products");
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl">
+      <h2 className="font-heading text-2xl tracking-wide mb-8">New Product</h2>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <Label htmlFor="name">Product Name</Label>
+          <Input id="name" name="name" required />
+        </div>
+        <div>
+          <Label htmlFor="slug">Slug</Label>
+          <Input id="slug" name="slug" required />
+        </div>
+        <div>
+          <Label htmlFor="description">Description</Label>
+          <Textarea id="description" name="description" rows={4} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="price">Price ($)</Label>
+            <Input id="price" name="price" type="number" step="0.01" required />
+          </div>
+          <div>
+            <Label htmlFor="compareAtPrice">Compare at Price ($)</Label>
+            <Input id="compareAtPrice" name="compareAtPrice" type="number" step="0.01" />
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="sku">SKU</Label>
+          <Input id="sku" name="sku" />
+        </div>
+        <div className="flex gap-4">
+          <Button type="submit" disabled={loading}>
+            {loading ? "Creating..." : "Create Product"}
+          </Button>
+          <Button type="button" variant="outline" onClick={() => router.back()}>
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}
