@@ -9,6 +9,7 @@ import {
   timestamp,
   jsonb,
   index,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 
 // ─── Store Config ─────────────────────────────────────
@@ -98,6 +99,7 @@ export const productCollections = pgTable("product_collections", {
   productId: uuid("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
   collectionId: uuid("collection_id").notNull().references(() => collections.id, { onDelete: "cascade" }),
 }, (table) => [
+  primaryKey({ columns: [table.productId, table.collectionId] }),
   index("product_collections_product_idx").on(table.productId),
   index("product_collections_collection_idx").on(table.collectionId),
 ]);
@@ -133,7 +135,7 @@ export const orders = pgTable("orders", {
 export const orderItems = pgTable("order_items", {
   id: uuid("id").primaryKey().defaultRandom(),
   orderId: uuid("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
-  productId: uuid("product_id").notNull().references(() => products.id),
+  productId: uuid("product_id").references(() => products.id, { onDelete: "set null" }),
   variantId: uuid("variant_id"),
   productName: varchar("product_name", { length: 255 }).notNull(),
   variantName: varchar("variant_name", { length: 255 }),

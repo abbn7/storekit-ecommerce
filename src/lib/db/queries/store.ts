@@ -1,4 +1,4 @@
-import { eq, asc } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { storeConfig, banners, announcements, testimonials } from "@/lib/db/schema";
 
@@ -40,7 +40,7 @@ export async function getActiveBanners(position?: string) {
   return db
     .select()
     .from(banners)
-    .where(eq(banners.isActive, true))
+    .where(and(...conditions))
     .orderBy(asc(banners.sortOrder));
 }
 

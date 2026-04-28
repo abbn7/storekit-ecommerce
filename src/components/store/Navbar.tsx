@@ -46,7 +46,7 @@ export function Navbar() {
               href="/collections"
               className={cn(
                 "text-sm font-medium tracking-wide uppercase transition-colors hover:text-accent",
-                isScrolled ? "text-foreground" : "text-foreground"
+                isScrolled ? "text-foreground" : "text-white"
               )}
             >
               Collections
@@ -55,7 +55,7 @@ export function Navbar() {
               href="/collections?sort=newest"
               className={cn(
                 "text-sm font-medium tracking-wide uppercase transition-colors hover:text-accent",
-                isScrolled ? "text-foreground" : "text-foreground"
+                isScrolled ? "text-foreground" : "text-white"
               )}
             >
               New Arrivals

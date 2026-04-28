@@ -15,15 +15,29 @@ export function AnnouncementBar() {
   const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
-    fetch("/api/store-config")
+    fetch("/api/announcements")
       .then((res) => res.json())
-      .then(() => {
-        // For now, use a static announcement since we don't have a dedicated endpoint
+      .then((data) => {
+        const active = (data.data ?? []).map((a: { id: string; text: string; linkUrl: string | null }) => ({
+          id: a.id,
+          text: a.text,
+          link_url: a.linkUrl,
+        }));
+        if (active.length > 0) {
+          setAnnouncements(active);
+        } else {
+          // Fallback when no announcements are configured
+          setAnnouncements([
+            { id: "1", text: "Complimentary shipping on orders over $200", link_url: null },
+          ]);
+        }
+      })
+      .catch(() => {
+        // Fallback on error
         setAnnouncements([
           { id: "1", text: "Complimentary shipping on orders over $200", link_url: null },
         ]);
-      })
-      .catch(() => {});
+      });
   }, []);
 
   if (isDismissed || announcements.length === 0) return null;

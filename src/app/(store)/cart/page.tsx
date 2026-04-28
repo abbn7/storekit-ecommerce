@@ -50,7 +50,17 @@ export default function CartPage() {
                   <div className="flex items-center gap-3 mt-3">
                     <button onClick={() => updateQuantity(item.product_id, item.variant_id, item.quantity - 1)} className="p-1 border hover:bg-muted"><Minus className="h-3 w-3" /></button>
                     <span className="w-8 text-center text-sm">{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.product_id, item.variant_id, item.quantity + 1)} className="p-1 border hover:bg-muted"><Plus className="h-3 w-3" /></button>
+                    <button
+                      onClick={() => {
+                        if (item.quantity < item.max_stock) {
+                          updateQuantity(item.product_id, item.variant_id, item.quantity + 1);
+                        }
+                      }}
+                      disabled={item.quantity >= item.max_stock}
+                      className="p-1 border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </button>
                   </div>
                 </div>
                 <div className="flex flex-col items-end justify-between">

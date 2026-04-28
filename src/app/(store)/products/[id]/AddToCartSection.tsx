@@ -8,41 +8,77 @@ import { useWishlistStore } from "@/stores/wishlistStore";
 import { useUIStore } from "@/stores/uiStore";
 import { formatPrice, cn } from "@/lib/utils";
 
-export function AddToCartSection({ productId }: { productId: string }) {
+interface VariantOption {
+  id: string;
+  name: string;
+  price: number;
+  compareAtPrice: number | null;
+  stock: number;
+  isActive: boolean;
+}
+
+interface AddToCartSectionProps {
+  productId: string;
+  productName: string;
+  productSlug: string;
+  price: number;
+  compareAtPrice: number | null;
+  description: string;
+  material: string | null;
+  careInstructions: string | null;
+  imageUrl: string;
+  maxStock?: number;
+  variants?: VariantOption[];
+}
+
+export function AddToCartSection({
+  productId,
+  productName,
+  productSlug,
+  price,
+  compareAtPrice,
+  description,
+  material,
+  careInstructions,
+  imageUrl,
+  maxStock = 99,
+  variants = [],
+}: AddToCartSectionProps) {
   const [quantity, setQuantity] = useState(1);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
+    variants.length > 0 ? variants[0]?.id ?? null : null
+  );
   const { addItem: addToCart } = useCartStore();
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
   const { openCart } = useUIStore();
   const wishlisted = isInWishlist(productId);
 
-  // Placeholder product data
-  const product = {
-    name: "Classic Essential Piece",
-    slug: productId,
-    price: 18500,
-    compareAtPrice: 22000,
-    description: "Meticulously crafted with premium materials. This piece embodies our commitment to quality and timeless design. Each detail has been considered to ensure lasting elegance.",
-    material: "100% Organic Cotton",
-    careInstructions: "Machine wash cold, tumble dry low",
-  };
+  // Determine active variant
+  const selectedVariant = variants.find((v) => v.id === selectedVariantId) ?? null;
 
-  const isOnSale = product.compareAtPrice > product.price;
+  // Use variant price/stock if a variant is selected, otherwise use product-level values
+  const activePrice = selectedVariant?.price ?? price;
+  const activeCompareAtPrice = selectedVariant?.compareAtPrice ?? compareAtPrice;
+  const activeMaxStock = selectedVariant?.stock ?? maxStock;
+  const activeVariantName = selectedVariant?.name ?? null;
+
+  const isOnSale = activeCompareAtPrice != null && activeCompareAtPrice > activePrice;
   const discount = isOnSale
-    ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
+    ? Math.round(((activeCompareAtPrice - activePrice) / activeCompareAtPrice) * 100)
     : 0;
 
   const handleAddToCart = () => {
     addToCart({
       product_id: productId,
-      product_name: product.name,
-      product_slug: product.slug,
-      variant_id: null,
-      variant_name: null,
-      price: product.price,
-      compare_at_price: product.compareAtPrice,
+      product_name: productName,
+      product_slug: productSlug,
+      variant_id: selectedVariantId,
+      variant_name: activeVariantName,
+      price: activePrice,
+      compare_at_price: activeCompareAtPrice,
       quantity,
-      image_url: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=500&fit=crop",
-      max_stock: 99,
+      image_url: imageUrl,
+      max_stock: activeMaxStock,
     });
     openCart();
   };
@@ -53,10 +89,10 @@ export function AddToCartSection({ productId }: { productId: string }) {
     } else {
       addToWishlist({
         product_id: productId,
-        product_name: product.name,
-        product_slug: product.slug,
-        price: product.price,
-        image_url: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=500&fit=crop",
+        product_name: productName,
+        product_slug: productSlug,
+        price: activePrice,
+        image_url: imageUrl,
       });
     }
   };
@@ -66,16 +102,16 @@ export function AddToCartSection({ productId }: { productId: string }) {
       {/* Title & Price */}
       <div>
         <h1 className="font-heading text-3xl sm:text-4xl font-light tracking-wide">
-          {product.name}
+          {productName}
         </h1>
         <div className="flex items-center gap-3 mt-3">
           <span className={cn("text-xl", isOnSale && "text-destructive font-medium")}>
-            {formatPrice(product.price)}
+            {formatPrice(activePrice)}
           </span>
           {isOnSale && (
             <>
               <span className="text-lg text-muted-foreground line-through">
-                {formatPrice(product.compareAtPrice)}
+                {formatPrice(activeCompareAtPrice!)}
               </span>
               <span className="text-xs font-medium bg-destructive/10 text-destructive px-2 py-0.5 rounded">
                 -{discount}%
@@ -87,14 +123,41 @@ export function AddToCartSection({ productId }: { productId: string }) {
 
       {/* Description */}
       <p className="text-muted-foreground leading-relaxed">
-        {product.description}
+        {description}
       </p>
 
       {/* Material */}
-      {product.material && (
+      {material && (
         <div className="text-sm">
           <span className="font-medium">Material:</span>{" "}
-          <span className="text-muted-foreground">{product.material}</span>
+          <span className="text-muted-foreground">{material}</span>
+        </div>
+      )}
+
+      {/* Variant Selection */}
+      {variants.length > 0 && (
+        <div className="space-y-2">
+          <span className="text-sm font-medium">
+            {selectedVariant?.name ? `Selected: ${selectedVariant.name}` : "Select an option"}
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {variants.map((variant) => (
+              <button
+                key={variant.id}
+                onClick={() => setSelectedVariantId(variant.id)}
+                disabled={!variant.isActive || variant.stock <= 0}
+                className={cn(
+                  "px-4 py-2 text-sm border transition-colors",
+                  selectedVariantId === variant.id
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-muted hover:border-foreground/50",
+                  (!variant.isActive || variant.stock <= 0) && "opacity-50 cursor-not-allowed line-through"
+                )}
+              >
+                {variant.name}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -110,19 +173,23 @@ export function AddToCartSection({ productId }: { productId: string }) {
           </button>
           <span className="w-12 text-center text-sm">{quantity}</span>
           <button
-            onClick={() => setQuantity(quantity + 1)}
-            className="p-2 hover:bg-muted transition-colors"
+            onClick={() => setQuantity(Math.min(activeMaxStock, quantity + 1))}
+            disabled={quantity >= activeMaxStock}
+            className="p-2 hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="h-4 w-4" />
           </button>
         </div>
+        {activeMaxStock < 10 && (
+          <span className="text-xs text-muted-foreground">Only {activeMaxStock} left</span>
+        )}
       </div>
 
       {/* Actions */}
       <div className="flex gap-3">
-        <Button onClick={handleAddToCart} className="flex-1 py-6 text-xs tracking-wider uppercase">
+        <Button onClick={handleAddToCart} className="flex-1 py-6 text-xs tracking-wider uppercase" disabled={activeMaxStock <= 0}>
           <ShoppingBag className="h-4 w-4 mr-2" />
-          Add to Cart
+          {activeMaxStock <= 0 ? "Out of Stock" : "Add to Cart"}
         </Button>
         <Button
           variant="outline"
@@ -140,11 +207,11 @@ export function AddToCartSection({ productId }: { productId: string }) {
       </div>
 
       {/* Care instructions */}
-      {product.careInstructions && (
+      {careInstructions && (
         <div className="pt-6 border-t">
           <p className="text-xs text-muted-foreground">
             <span className="font-medium text-foreground">Care:</span>{" "}
-            {product.careInstructions}
+            {careInstructions}
           </p>
         </div>
       )}

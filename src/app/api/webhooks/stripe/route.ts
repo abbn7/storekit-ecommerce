@@ -35,23 +35,24 @@ export async function POST(request: NextRequest) {
           try {
             const config = await getStoreConfig();
             const storeName = config?.name || "Store";
+            const html = await generateOrderConfirmationHtml({
+              orderNumber: order.id.slice(0, 8),
+              customerName: `${order.firstName} ${order.lastName}`,
+              items: order.items.map((item) => ({
+                name: item.productName + (item.variantName ? ` (${item.variantName})` : ""),
+                quantity: item.quantity,
+                price: item.price,
+              })),
+              subtotal: order.subtotal,
+              shipping: order.shippingCost,
+              tax: order.tax,
+              total: order.total,
+              storeName,
+            });
             await sendEmail({
               to: order.email,
               subject: `Order Confirmation - #${order.id.slice(0, 8)}`,
-              html: generateOrderConfirmationHtml({
-                orderNumber: order.id.slice(0, 8),
-                customerName: `${order.firstName} ${order.lastName}`,
-                items: order.items.map((item) => ({
-                  name: item.productName + (item.variantName ? ` (${item.variantName})` : ""),
-                  quantity: item.quantity,
-                  price: item.price,
-                })),
-                subtotal: order.subtotal,
-                shipping: order.shippingCost,
-                tax: order.tax,
-                total: order.total,
-                storeName,
-              }),
+              html,
             });
           } catch (emailError) {
             console.error("Failed to send confirmation email:", emailError);

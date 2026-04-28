@@ -51,15 +51,29 @@ export async function PATCH(
     if (["shipped", "delivered", "cancelled", "refunded"].includes(status)) {
       try {
         const config = await getStoreConfig();
+        // Fetch full order with items for the email
+        const fullOrder = await getOrderById(order.id);
+        const emailItems = fullOrder?.items.map((item) => ({
+          name: item.productName + (item.variantName ? ` (${item.variantName})` : ""),
+          quantity: item.quantity,
+          price: item.price,
+        })) ?? [];
+        const shippingAddress = fullOrder
+          ? `${fullOrder.addressLine1}${fullOrder.addressLine2 ? `, ${fullOrder.addressLine2}` : ""}, ${fullOrder.city}, ${fullOrder.state} ${fullOrder.postalCode}, ${fullOrder.country}`
+          : "";
+
+        const html = await generateOrderStatusUpdateHtml({
+          orderNumber: order.id.slice(0, 8),
+          customerName: `${order.firstName} ${order.lastName}`,
+          status,
+          storeName: config?.name || "Store",
+          items: emailItems,
+          shippingAddress,
+        });
         await sendEmail({
           to: order.email,
           subject: `Order Update - #${order.id.slice(0, 8)}`,
-          html: generateOrderStatusUpdateHtml({
-            orderNumber: order.id.slice(0, 8),
-            customerName: `${order.firstName} ${order.lastName}`,
-            status,
-            storeName: config?.name || "Store",
-          }),
+          html,
         });
       } catch (emailError) {
         console.error("Failed to send status email:", emailError);

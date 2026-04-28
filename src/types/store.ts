@@ -10,7 +10,8 @@ export interface StoreConfig {
   social_links: SocialLinks | null;
   free_shipping_threshold: number | null;
   shipping_cost: number;
-  tax_rate: number;
+  // PostgreSQL numeric type returns strings; use parseFloat() when computing
+  tax_rate: string;
 }
 
 export interface SocialLinks {

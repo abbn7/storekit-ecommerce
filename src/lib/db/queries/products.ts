@@ -1,4 +1,4 @@
-import { eq, and, or, ilike, desc, asc, sql, count } from "drizzle-orm";
+import { eq, and, or, ilike, desc, asc, sql, count, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { products, productImages, productVariants, productCollections, collections } from "@/lib/db/schema";
 import type { ProductFilters } from "@/types";
@@ -48,10 +48,12 @@ export async function getProducts(filters?: ProductFilters) {
   if (filters?.is_featured) conditions.push(eq(products.isFeatured, true));
   if (filters?.is_new) conditions.push(eq(products.isNew, true));
   if (filters?.search) {
+    // Escape special LIKE pattern characters to prevent unexpected query behavior
+    const escaped = filters.search.replace(/[%_\\]/g, "\\$&");
     conditions.push(
       or(
-        ilike(products.name, `%${filters.search}%`),
-        ilike(products.description, `%${filters.search}%`)
+        ilike(products.name, `%${escaped}%`),
+        ilike(products.description, `%${escaped}%`)
       )!
     );
   }

@@ -4,6 +4,9 @@ import { getProductById } from "@/lib/db/queries/products";
 import { getStoreConfig } from "@/lib/db/queries/store";
 import { createCheckoutSession, calculateOrderAmount } from "@/lib/stripe";
 import { apiResponse, apiError } from "@/lib/api-response";
+import { db } from "@/lib/db";
+import { orders, orderItems } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 // Zod schema for order creation (Fix #6)
@@ -114,40 +117,47 @@ export async function POST(request: NextRequest) {
       : shipping;
     const finalTotal = subtotal + finalShipping + tax;
 
-    // Create order in DB
-    const order = await createOrder({
-      email,
-      firstName,
-      lastName,
-      phone: phone || null,
-      addressLine1: address.addressLine1,
-      addressLine2: address.addressLine2 || null,
-      city: address.city,
-      state: address.state,
-      postalCode: address.postalCode,
-      country: address.country,
-      status: "pending",
-      subtotal,
-      shippingCost: finalShipping,
-      tax,
-      total: finalTotal,
-      stripeSessionId: null,
-      clerkUserId: clerkUserId || null,
-    });
+    // Create order and items in a transaction to prevent partial data
+    const order = await db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(orders)
+        .values({
+          email,
+          firstName,
+          lastName,
+          phone: phone || null,
+          addressLine1: address.addressLine1,
+          addressLine2: address.addressLine2 || null,
+          city: address.city,
+          state: address.state,
+          postalCode: address.postalCode,
+          country: address.country,
+          status: "pending",
+          subtotal,
+          shippingCost: finalShipping,
+          tax,
+          total: finalTotal,
+          stripeSessionId: null,
+          clerkUserId: clerkUserId || null,
+        })
+        .returning();
 
-    // Create order items with server-verified prices
-    for (const item of dbItems) {
-      await createOrderItem({
-        orderId: order.id,
-        productId: item.productId,
-        variantId: item.variantId || null,
-        productName: item.name,
-        variantName: item.variantName || null,
-        quantity: item.quantity,
-        price: item.price,
-        total: item.price * item.quantity,
-      });
-    }
+      // Create order items with server-verified prices
+      for (const item of dbItems) {
+        await tx.insert(orderItems).values({
+          orderId: created.id,
+          productId: item.productId,
+          variantId: item.variantId || null,
+          productName: item.name,
+          variantName: item.variantName || null,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.price * item.quantity,
+        });
+      }
+
+      return created;
+    });
 
     // Create Stripe checkout session with server-verified prices
     const session = await createCheckoutSession({
@@ -167,6 +177,12 @@ export async function POST(request: NextRequest) {
       shippingCost: finalShipping,
       taxRate,
     });
+
+    // Save the Stripe session ID so the webhook can match the order
+    await db
+      .update(orders)
+      .set({ stripeSessionId: session.id })
+      .where(eq(orders.id, order.id));
 
     return apiResponse({ orderId: order.id, checkoutUrl: session.url }, undefined, 201);
   } catch (error) {

@@ -5,10 +5,10 @@ import { FaInstagram, FaTwitter, FaFacebookF, FaPinterestP } from "react-icons/f
 import type { IconType } from "react-icons";
 
 const socialLinks: { icon: IconType; href: string; label: string }[] = [
-  { icon: FaInstagram, href: "/instagram", label: "Instagram" },
-  { icon: FaTwitter, href: "/twitter", label: "Twitter" },
-  { icon: FaFacebookF, href: "/facebook", label: "Facebook" },
-  { icon: FaPinterestP, href: "/pinterest", label: "Pinterest" },
+  { icon: FaInstagram, href: "https://instagram.com", label: "Instagram" },
+  { icon: FaTwitter, href: "https://twitter.com", label: "Twitter" },
+  { icon: FaFacebookF, href: "https://facebook.com", label: "Facebook" },
+  { icon: FaPinterestP, href: "https://pinterest.com", label: "Pinterest" },
 ];
 
 export function Footer() {

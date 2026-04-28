@@ -4,23 +4,31 @@ import { useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
-export function ProductImageGallery() {
-  // Placeholder images for demo
-  const images = [
-    "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=1000&fit=crop",
-    "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&h=1000&fit=crop",
-  ];
+interface ProductImage {
+  url: string;
+  altText: string | null;
+}
 
+interface ProductImageGalleryProps {
+  images: ProductImage[];
+}
+
+export function ProductImageGallery({ images }: ProductImageGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
+
+  // Fallback placeholder if no images
+  const displayImages = images.length > 0
+    ? images
+    : [{ url: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=1000&fit=crop", altText: "Product image" }];
 
   return (
     <div className="space-y-4">
       {/* Main image */}
       <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-        {images[selectedIndex] ? (
+        {displayImages[selectedIndex] ? (
           <Image
-            src={images[selectedIndex]}
-            alt="Product image"
+            src={displayImages[selectedIndex].url}
+            alt={displayImages[selectedIndex].altText || "Product image"}
             fill
             className="object-cover"
             sizes="(max-width: 1024px) 100vw, 50vw"
@@ -34,9 +42,9 @@ export function ProductImageGallery() {
       </div>
 
       {/* Thumbnails */}
-      {images.length > 1 && (
+      {displayImages.length > 1 && (
         <div className="flex gap-3">
-          {images.map((img, i) => (
+          {displayImages.map((img, i) => (
             <button
               key={i}
               onClick={() => setSelectedIndex(i)}
@@ -46,8 +54,8 @@ export function ProductImageGallery() {
               )}
             >
               <Image
-                src={img}
-                alt={`Product thumbnail ${i + 1}`}
+                src={img.url}
+                alt={img.altText || `Product thumbnail ${i + 1}`}
                 fill
                 className="object-cover"
                 sizes="80px"

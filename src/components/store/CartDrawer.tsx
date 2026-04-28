@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Minus, Plus, X, ShoppingBag } from "lucide-react";
@@ -14,7 +15,18 @@ export function CartDrawer() {
   const { items, removeItem, updateQuantity, getSubtotal, getItemCount } = useCartStore();
   const subtotal = getSubtotal();
   const itemCount = getItemCount();
-  const freeShippingThreshold = 20000; // $200 in cents
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState<number>(20000);
+
+  useEffect(() => {
+    fetch("/api/store-config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.data?.free_shipping_threshold != null) {
+          setFreeShippingThreshold(data.data.free_shipping_threshold);
+        }
+      })
+      .catch(() => {});
+  }, []);
   const freeShippingRemaining = freeShippingThreshold - subtotal;
 
   return (

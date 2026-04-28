@@ -1,4 +1,4 @@
-import { eq, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { collections, productCollections, products, productImages } from "@/lib/db/schema";
 
@@ -34,22 +34,40 @@ export async function getCollectionBySlug(slug: string) {
     .from(products)
     .innerJoin(productCollections, eq(products.id, productCollections.productId))
     .where(
-      eq(productCollections.collectionId, collection.id) &&
-      eq(products.isActive, true)
+      and(
+        eq(productCollections.collectionId, collection.id),
+        eq(products.isActive, true)
+      )
     )
     .orderBy(desc(products.createdAt));
 
-  // Get primary images for each product
-  const productsWithImages = await Promise.all(
-    collectionProducts.map(async (product) => {
-      const [image] = await db
-        .select({ url: productImages.url, altText: productImages.altText, isPrimary: productImages.isPrimary })
+  // Batch fetch images instead of N+1 queries
+  const productIds = collectionProducts.map((p) => p.id);
+
+  const allImages = productIds.length > 0
+    ? await db
+        .select({
+          productId: productImages.productId,
+          url: productImages.url,
+          altText: productImages.altText,
+          isPrimary: productImages.isPrimary,
+        })
         .from(productImages)
-        .where(eq(productImages.productId, product.id))
-        .limit(1);
-      return { ...product, images: image ? [image] : [] };
-    })
-  );
+        .where(inArray(productImages.productId, productIds))
+    : [];
+
+  // Group images by productId
+  const imagesByProductId = new Map<string, typeof allImages>();
+  for (const img of allImages) {
+    const existing = imagesByProductId.get(img.productId) ?? [];
+    existing.push(img);
+    imagesByProductId.set(img.productId, existing);
+  }
+
+  const productsWithImages = collectionProducts.map((product) => ({
+    ...product,
+    images: imagesByProductId.get(product.id) ?? [],
+  }));
 
   return { ...collection, products: productsWithImages };
 }
@@ -85,7 +103,9 @@ export async function removeProductFromCollection(productId: string, collectionI
   await db
     .delete(productCollections)
     .where(
-      eq(productCollections.productId, productId) &&
-      eq(productCollections.collectionId, collectionId)
+      and(
+        eq(productCollections.productId, productId),
+        eq(productCollections.collectionId, collectionId)
+      )
     );
 }

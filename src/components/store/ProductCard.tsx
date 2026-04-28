@@ -18,6 +18,7 @@ interface ProductCardProps {
   images: { url: string; alt_text: string | null; is_primary: boolean }[];
   isNew?: boolean;
   isFeatured?: boolean;
+  stock?: number;
 }
 
 export function ProductCard({
@@ -29,6 +30,7 @@ export function ProductCard({
   images,
   isNew,
   isFeatured,
+  stock,
 }: ProductCardProps) {
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
   const { addItem: addToCart } = useCartStore();
@@ -53,7 +55,7 @@ export function ProductCard({
       compare_at_price: compareAtPrice,
       quantity: 1,
       image_url: primaryImage || "",
-      max_stock: 99,
+      max_stock: stock ?? 99,
     });
     openCart();
   };

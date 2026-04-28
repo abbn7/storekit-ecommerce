@@ -16,19 +16,17 @@ export default function NewProductPage() {
     setLoading(true);
     const formData = new FormData(e.currentTarget);
     const data = {
-      product: {
-        name: formData.get("name"),
-        slug: formData.get("slug"),
-        description: formData.get("description"),
-        price: Math.round(parseFloat(formData.get("price") as string) * 100),
-        compareAtPrice: formData.get("compareAtPrice")
-          ? Math.round(parseFloat(formData.get("compareAtPrice") as string) * 100)
-          : null,
-        sku: formData.get("sku"),
-        isActive: true,
-        isFeatured: false,
-        isNew: true,
-      },
+      name: formData.get("name"),
+      slug: formData.get("slug"),
+      description: formData.get("description"),
+      price: Math.round(parseFloat(formData.get("price") as string) * 100),
+      compareAtPrice: formData.get("compareAtPrice")
+        ? Math.round(parseFloat(formData.get("compareAtPrice") as string) * 100)
+        : undefined,
+      sku: formData.get("sku") || undefined,
+      isActive: true,
+      isFeatured: false,
+      isNew: true,
     };
 
     try {

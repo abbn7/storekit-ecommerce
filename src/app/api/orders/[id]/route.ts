@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { getOrderById, getOrderByStripeSession } from "@/lib/db/queries/orders";
+import { verifyAdminSession } from "@/lib/admin-auth";
 import { apiResponse, apiError } from "@/lib/api-response";
 
 export async function GET(
@@ -10,12 +11,18 @@ export async function GET(
     const { id } = await params;
     const sessionId = request.nextUrl.searchParams.get("session_id");
 
-    let order;
-    if (sessionId) {
-      order = await getOrderByStripeSession(sessionId);
-    } else {
-      order = await getOrderById(id);
+    // Public access only via Stripe session_id (unguessable, tied to checkout)
+    // Direct order ID lookup requires admin authentication
+    if (!sessionId) {
+      const isAuth = await verifyAdminSession();
+      if (!isAuth) {
+        return apiError("Unauthorized — provide session_id or admin credentials", 401);
+      }
     }
+
+    const order = sessionId
+      ? await getOrderByStripeSession(sessionId)
+      : await getOrderById(id);
 
     if (!order) {
       return apiError("Order not found", 404);

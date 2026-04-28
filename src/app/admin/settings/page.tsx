@@ -59,7 +59,7 @@ export default function AdminSettingsPage() {
           currency: config.currency,
           free_shipping_threshold: Math.round(parseFloat(config.freeShippingThreshold) * 100),
           shipping_cost: Math.round(parseFloat(config.shippingCost) * 100),
-          tax_rate: parseFloat(config.taxRate),
+          tax_rate: config.taxRate,
         }),
       });
       setSaved(true);
