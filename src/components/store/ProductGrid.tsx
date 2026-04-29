@@ -1,5 +1,8 @@
+"use client";
+
 import { ProductCard } from "./ProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StaggerContainer, StaggerItem } from "@/lib/motion";
 
 interface ProductGridProps {
   products: {
@@ -21,9 +24,9 @@ export function ProductGrid({ products, loading }: ProductGridProps) {
       <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="space-y-3">
-            <Skeleton className="aspect-[3/4] w-full" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="aspect-[3/4] w-full skeleton-shimmer" />
+            <Skeleton className="h-4 w-3/4 skeleton-shimmer" />
+            <Skeleton className="h-4 w-1/2 skeleton-shimmer" />
           </div>
         ))}
       </div>
@@ -39,10 +42,12 @@ export function ProductGrid({ products, loading }: ProductGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
+    <StaggerContainer className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
       {products.map((product) => (
-        <ProductCard key={product.id} {...product} />
+        <StaggerItem key={product.id}>
+          <ProductCard {...product} />
+        </StaggerItem>
       ))}
-    </div>
+    </StaggerContainer>
   );
 }

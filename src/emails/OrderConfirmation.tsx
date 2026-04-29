@@ -1,4 +1,4 @@
-import {
+﻿import {
   Html,
   Head,
   Body,
@@ -45,7 +45,7 @@ export function OrderConfirmation({
 
           <Section style={{ background: "#fff", padding: 32, borderRadius: 8 }}>
             <Text style={{ marginTop: 0 }}>Dear {customerName},</Text>
-            <Text>Thank you for your order. We're preparing your items with care.</Text>
+            <Text>Thank you for your order. We&apos;re preparing your items with care.</Text>
 
             <Text style={{ fontSize: 18, marginTop: 32 }}>Order #{orderNumber}</Text>
 

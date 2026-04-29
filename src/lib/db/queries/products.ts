@@ -1,4 +1,4 @@
-import { eq, and, or, ilike, desc, asc, sql, count, inArray } from "drizzle-orm";
+import { eq, and, or, ilike, desc, asc, count, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { products, productImages, productVariants, productCollections, collections } from "@/lib/db/schema";
 import type { ProductFilters } from "@/types";
@@ -113,7 +113,39 @@ export async function getProducts(filters?: ProductFilters & { includeInactive?:
     .limit(limit)
     .offset(offset);
 
-  return result;
+  // Batch-fetch images for all products to maintain consistent return shape
+  const productIds = result.map((p) => p.id);
+  if (productIds.length > 0) {
+    const allImages = await db
+      .select({
+        productId: productImages.productId,
+        id: productImages.id,
+        url: productImages.url,
+        altText: productImages.altText,
+        width: productImages.width,
+        height: productImages.height,
+        isPrimary: productImages.isPrimary,
+        sortOrder: productImages.sortOrder,
+      })
+      .from(productImages)
+      .where(inArray(productImages.productId, productIds))
+      .orderBy(productImages.sortOrder);
+
+    const imagesByProductId = new Map<string, typeof allImages>();
+    for (const img of allImages) {
+      const existing = imagesByProductId.get(img.productId) ?? [];
+      existing.push(img);
+      imagesByProductId.set(img.productId, existing);
+    }
+
+    return result.map((product) => ({
+      ...product,
+      images: imagesByProductId.get(product.id) ?? [],
+      variants: [],
+    }));
+  }
+
+  return result.map((product) => ({ ...product, images: [], variants: [] }));
 }
 
 export async function getProductBySlug(slug: string) {
@@ -157,21 +189,91 @@ export async function getProductById(id: string) {
 }
 
 export async function getFeaturedProducts(limit: number = 8) {
-  return db
+  const safeLimit = Math.max(1, Math.min(50, limit));
+  const result = await db
     .select()
     .from(products)
     .where(and(eq(products.isActive, true), eq(products.isFeatured, true)))
     .orderBy(desc(products.createdAt))
-    .limit(limit);
+    .limit(safeLimit);
+
+  // Batch-fetch images for consistent return shape
+  const productIds = result.map((p) => p.id);
+  if (productIds.length > 0) {
+    const allImages = await db
+      .select({
+        productId: productImages.productId,
+        id: productImages.id,
+        url: productImages.url,
+        altText: productImages.altText,
+        width: productImages.width,
+        height: productImages.height,
+        isPrimary: productImages.isPrimary,
+        sortOrder: productImages.sortOrder,
+      })
+      .from(productImages)
+      .where(inArray(productImages.productId, productIds))
+      .orderBy(productImages.sortOrder);
+
+    const imagesByProductId = new Map<string, typeof allImages>();
+    for (const img of allImages) {
+      const existing = imagesByProductId.get(img.productId) ?? [];
+      existing.push(img);
+      imagesByProductId.set(img.productId, existing);
+    }
+
+    return result.map((product) => ({
+      ...product,
+      images: imagesByProductId.get(product.id) ?? [],
+      variants: [],
+    }));
+  }
+
+  return result.map((product) => ({ ...product, images: [], variants: [] }));
 }
 
 export async function getNewArrivals(limit: number = 8) {
-  return db
+  const safeLimit = Math.max(1, Math.min(50, limit));
+  const result = await db
     .select()
     .from(products)
     .where(and(eq(products.isActive, true), eq(products.isNew, true)))
     .orderBy(desc(products.createdAt))
-    .limit(limit);
+    .limit(safeLimit);
+
+  // Batch-fetch images for consistent return shape
+  const productIds = result.map((p) => p.id);
+  if (productIds.length > 0) {
+    const allImages = await db
+      .select({
+        productId: productImages.productId,
+        id: productImages.id,
+        url: productImages.url,
+        altText: productImages.altText,
+        width: productImages.width,
+        height: productImages.height,
+        isPrimary: productImages.isPrimary,
+        sortOrder: productImages.sortOrder,
+      })
+      .from(productImages)
+      .where(inArray(productImages.productId, productIds))
+      .orderBy(productImages.sortOrder);
+
+    const imagesByProductId = new Map<string, typeof allImages>();
+    for (const img of allImages) {
+      const existing = imagesByProductId.get(img.productId) ?? [];
+      existing.push(img);
+      imagesByProductId.set(img.productId, existing);
+    }
+
+    return result.map((product) => ({
+      ...product,
+      images: imagesByProductId.get(product.id) ?? [],
+      variants: [],
+    }));
+  }
+
+  return result.map((product) => ({ ...product, images: [], variants: [] }));
 }
 
 // C4 FIX: Added collection filter support to getProductsCount
@@ -236,7 +338,8 @@ export async function addProductImage(data: typeof productImages.$inferInsert) {
 }
 
 export async function deleteProductImage(id: string) {
-  await db.delete(productImages).where(eq(productImages.id, id));
+  const [deleted] = await db.delete(productImages).where(eq(productImages.id, id)).returning({ id: productImages.id });
+  return !!deleted;
 }
 
 export async function addProductVariant(data: typeof productVariants.$inferInsert) {
@@ -250,9 +353,10 @@ export async function updateProductVariant(id: string, data: Partial<typeof prod
     .set(data)
     .where(eq(productVariants.id, id))
     .returning();
-  return variant;
+  return variant ?? null;
 }
 
 export async function deleteProductVariant(id: string) {
-  await db.delete(productVariants).where(eq(productVariants.id, id));
+  const [deleted] = await db.delete(productVariants).where(eq(productVariants.id, id)).returning({ id: productVariants.id });
+  return !!deleted;
 }

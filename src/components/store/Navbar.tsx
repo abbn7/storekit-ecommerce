@@ -1,30 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, ShoppingBag, Heart, Menu, X, User } from "lucide-react";
+import { Search, ShoppingBag, Heart, Menu, X, User, LayoutDashboard } from "lucide-react";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
 import { useCartStore } from "@/stores/cartStore";
 import { useUIStore } from "@/stores/uiStore";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import { hoverScale } from "@/lib/motion";
 
 export function Navbar() {
   const { scrollDirection, scrollY } = useScrollDirection();
   const itemCount = useCartStore((s) => s.getItemCount());
   const { toggleSearch, toggleMobileMenu, toggleCart, isMobileMenuOpen } = useUIStore();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
-
   const isScrolled = scrollY > 50;
   const isHidden = scrollDirection === "down" && scrollY > 200;
 
   return (
     <header
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-[var(--ease-standard)]",
         isScrolled
-          ? "bg-white/95 backdrop-blur-md shadow-sm"
+          ? "glass-panel"
           : "bg-transparent",
         isHidden && !isMobileMenuOpen ? "-translate-y-full" : "translate-y-0"
       )}
@@ -34,7 +31,10 @@ export function Navbar() {
           {/* Mobile menu button */}
           <button
             onClick={toggleMobileMenu}
-            className="lg:hidden p-2 -ml-2"
+            className={cn(
+              "lg:hidden p-2 -ml-2 transition-colors",
+              isScrolled ? "text-foreground" : "text-white"
+            )}
             aria-label="Toggle menu"
           >
             {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -64,24 +64,34 @@ export function Navbar() {
 
           {/* Logo */}
           <Link href="/" className="absolute left-1/2 -translate-x-1/2 lg:relative lg:left-0 lg:translate-x-0">
-            <span className="font-heading text-2xl lg:text-3xl font-light tracking-[0.2em] uppercase">
+            <span className={cn(
+              "font-heading text-2xl lg:text-3xl font-light tracking-[0.2em] uppercase transition-colors",
+              isScrolled ? "text-foreground" : "text-white"
+            )}>
               MAISON
             </span>
           </Link>
 
           {/* Right icons */}
-          <div className="flex items-center gap-3 sm:gap-4">
-            <button
+          <div className="flex items-center gap-2 sm:gap-3">
+            <motion.button
               onClick={toggleSearch}
-              className="p-2 transition-colors hover:text-accent"
+              className={cn(
+                "p-2 transition-colors hover:text-accent focus-ring rounded-full",
+                isScrolled ? "text-foreground" : "text-white"
+              )}
               aria-label="Search"
+              {...hoverScale}
             >
               <Search className="h-5 w-5" />
-            </button>
+            </motion.button>
 
             <Link
               href="/account/wishlist"
-              className="hidden sm:block p-2 transition-colors hover:text-accent"
+              className={cn(
+                "hidden sm:block p-2 transition-colors hover:text-accent focus-ring rounded-full",
+                isScrolled ? "text-foreground" : "text-white"
+              )}
               aria-label="Wishlist"
             >
               <Heart className="h-5 w-5" />
@@ -89,24 +99,51 @@ export function Navbar() {
 
             <Link
               href="/account"
-              className="hidden sm:block p-2 transition-colors hover:text-accent"
+              className={cn(
+                "hidden sm:block p-2 transition-colors hover:text-accent focus-ring rounded-full",
+                isScrolled ? "text-foreground" : "text-white"
+              )}
               aria-label="Account"
             >
               <User className="h-5 w-5" />
             </Link>
 
-            <button
+            {/* Dashboard access — subtle but discoverable */}
+            <Link
+              href="/admin/login"
+              className={cn(
+                "hidden sm:block p-2 transition-colors hover:text-accent focus-ring rounded-full",
+                isScrolled ? "text-foreground/50 hover:text-foreground" : "text-white/50 hover:text-white"
+              )}
+              aria-label="Dashboard"
+              title="Dashboard"
+            >
+              <LayoutDashboard className="h-4 w-4" />
+            </Link>
+
+            <motion.button
               onClick={toggleCart}
-              className="p-2 transition-colors hover:text-accent relative"
+              className={cn(
+                "p-2 transition-colors hover:text-accent relative focus-ring rounded-full",
+                isScrolled ? "text-foreground" : "text-white"
+              )}
               aria-label="Cart"
+              {...hoverScale}
             >
               <ShoppingBag className="h-5 w-5" />
-              {mounted && itemCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-accent text-[10px] font-bold text-white flex items-center justify-center">
-                  {itemCount}
-                </span>
-              )}
-            </button>
+              <AnimatePresence>
+                {itemCount > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-accent text-[10px] font-bold text-white flex items-center justify-center"
+                  >
+                    {itemCount}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
           </div>
         </div>
       </nav>

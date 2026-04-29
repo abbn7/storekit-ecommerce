@@ -56,3 +56,9 @@ ehthumbs.db
 
 # Plans (development only)
 plans/
+
+# Fix scripts (development only)
+fix-entities.*
+
+# Drizzle meta
+drizzle/meta/

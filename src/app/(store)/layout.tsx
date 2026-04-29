@@ -4,6 +4,7 @@ import { AnnouncementBar } from "@/components/store/AnnouncementBar";
 import { CartDrawer } from "@/components/store/CartDrawer";
 import { MobileMenu } from "@/components/store/MobileMenu";
 import { SearchOverlay } from "@/components/store/SearchOverlay";
+import { BackToTop } from "@/components/store/BackToTop";
 import { getStoreConfig } from "@/lib/db/queries/store";
 
 export default async function StoreLayout({
@@ -11,7 +12,6 @@ export default async function StoreLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // M7 FIX: Fetch store config to pass social links to Footer
   const config = await getStoreConfig().catch(() => null);
 
   return (
@@ -23,6 +23,7 @@ export default async function StoreLayout({
       <SearchOverlay />
       <main className="min-h-screen">{children}</main>
       <Footer socialLinks={config?.socialLinks as Record<string, string> | null | undefined} />
+      <BackToTop />
     </>
   );
 }

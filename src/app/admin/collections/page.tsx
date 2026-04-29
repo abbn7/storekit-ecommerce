@@ -6,8 +6,10 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "../products/DataTable";
 
+type CollectionRow = { id: string; [key: string]: unknown };
+
 export default function AdminCollectionsPage() {
-  const [collections, setCollections] = useState([]);
+  const [collections, setCollections] = useState<CollectionRow[]>([]);
 
   useEffect(() => {
     fetch("/api/admin/collections")

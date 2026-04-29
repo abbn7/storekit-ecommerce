@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { FaInstagram, FaTwitter, FaFacebookF, FaPinterestP } from "react-icons/fa";
 import type { IconType } from "react-icons";
-import type { SocialLinks } from "@/types"; // M7 FIX: Import SocialLinks type
+import type { SocialLinks } from "@/types";
+import { FadeIn } from "@/lib/motion";
 
 interface FooterProps {
-  socialLinks?: SocialLinks | null; // M7 FIX: Accept social links from store config
+  socialLinks?: SocialLinks | null;
 }
 
 const defaultSocialLinks: { icon: IconType; href: string; label: string }[] = [
@@ -24,7 +25,6 @@ const iconMap: Record<string, IconType> = {
 };
 
 export function Footer({ socialLinks }: FooterProps) {
-  // M7 FIX: Build social links from store config, fall back to defaults
   const links = socialLinks
     ? Object.entries(socialLinks)
         .filter(([, url]) => url)
@@ -44,9 +44,15 @@ export function Footer({ socialLinks }: FooterProps) {
             <h2 className="font-heading text-3xl font-light tracking-[0.2em] uppercase mb-4">
               MAISON
             </h2>
-            <p className="text-sm text-background/60 leading-relaxed">
+            <p className="text-sm text-background/60 leading-relaxed mb-6">
               Curated luxury essentials for the modern connoisseur.
             </p>
+            <Link
+              href="/admin/login"
+              className="inline-flex items-center gap-2 text-xs text-background/40 hover:text-background/70 tracking-wider uppercase transition-colors"
+            >
+              Dashboard →
+            </Link>
           </div>
 
           {/* Shop */}
@@ -58,7 +64,7 @@ export function Footer({ socialLinks }: FooterProps) {
               {[
                 { name: "All Collections", href: "/collections" },
                 { name: "New Arrivals", href: "/collections?sort=newest" },
-                { name: "About", href: "/about" }, // L6 FIX: Add About page link
+                { name: "About", href: "/about" },
               ].map((item) => (
                 <li key={item.name}>
                   <Link
@@ -99,7 +105,6 @@ export function Footer({ socialLinks }: FooterProps) {
             <p className="text-sm text-background/60 mb-4">
               Subscribe for exclusive access to new collections and special offers.
             </p>
-            {/* M8 FIX: Add placeholder text indicating coming soon */}
             <p className="text-xs text-background/40 italic">
               Newsletter subscription coming soon.
             </p>

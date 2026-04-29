@@ -8,7 +8,6 @@ export const metadata: Metadata = {
   description: "Browse our curated collections",
 };
 
-// M5 FIX: Fetch collections from DB instead of using hardcoded data
 export default async function CollectionsPage() {
   const collections = await getCollections().catch(() => []);
 
@@ -35,7 +34,7 @@ export default async function CollectionsPage() {
               <Link
                 key={collection.id}
                 href={`/collections/${collection.slug}`}
-                className="group relative aspect-[3/4] overflow-hidden"
+                className="group relative aspect-[3/4] overflow-hidden rounded-xl"
               >
                 {collection.imageUrl ? (
                   <Image
@@ -52,12 +51,14 @@ export default async function CollectionsPage() {
                 )}
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors" />
                 <div className="absolute bottom-0 left-0 right-0 p-8">
-                  <h2 className="font-heading text-3xl text-white tracking-wide mb-1">
-                    {collection.name}
-                  </h2>
-                  {collection.description && (
-                    <p className="text-sm text-white/70">{collection.description}</p>
-                  )}
+                  <div className="glass-panel rounded-lg px-4 py-3 inline-block">
+                    <h2 className="font-heading text-2xl text-white tracking-wide mb-1">
+                      {collection.name}
+                    </h2>
+                    {collection.description && (
+                      <p className="text-sm text-white/70">{collection.description}</p>
+                    )}
+                  </div>
                 </div>
               </Link>
             ))}

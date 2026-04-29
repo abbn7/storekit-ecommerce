@@ -9,16 +9,21 @@
   --brand: 0 0% 4%;
   --brand-foreground: 0 0% 98%;
 
-  /* Accent */
+  /* Accent — Rich Gold */
   --accent: 40 60% 50%;
   --accent-foreground: 0 0% 4%;
 
-  /* Surfaces */
+  /* Accent Gradient */
+  --accent-gradient-from: 35 70% 55%;
+  --accent-gradient-to: 45 55% 45%;
+
+  /* Surfaces — 4-level elevation */
   --surface-1: 0 0% 100%;
   --surface-2: 0 0% 98%;
   --surface-3: 0 0% 94%;
+  --surface-4: 0 0% 100%;
 
-  /* Text */
+  /* Text — 3-level hierarchy */
   --text-primary: 0 0% 4%;
   --text-secondary: 0 0% 40%;
   --text-muted: 0 0% 64%;
@@ -31,12 +36,51 @@
   /* Status */
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
-
   --success: 142 76% 36%;
   --warning: 38 92% 50%;
 
-  /* Radius */
-  --radius: 0.5rem;
+  /* Radius — 6-level scale */
+  --radius: 0.625rem;
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+  --radius-2xl: calc(var(--radius) + 12px);
+  --radius-full: 9999px;
+
+  /* Motion — 5-level duration scale */
+  --motion-instant: 100ms;
+  --motion-fast: 150ms;
+  --motion-base: 300ms;
+  --motion-slow: 500ms;
+  --motion-dramatic: 800ms;
+
+  /* Easing */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0, 1);
+  --ease-accelerate: cubic-bezier(0.3, 0, 1, 1);
+
+  /* Glass — Level 1: Subtle (nav bars, subtle overlays) */
+  --glass-bg: 0 0% 100% / 0.6;
+  --glass-blur: 12px;
+  --glass-border: 0 0% 100% / 0.3;
+  --glass-shadow: 0 4px 16px hsl(0 0% 4% / 0.06);
+
+  /* Glass — Level 2: Standard (cards, panels, drawers) */
+  --glass-bg-strong: 0 0% 100% / 0.74;
+  --glass-blur-strong: 18px;
+  --glass-border-strong: 0 0% 100% / 0.45;
+  --glass-shadow-strong: 0 14px 40px hsl(0 0% 4% / 0.12);
+
+  /* Glass — Level 3: Heavy (modals, search overlay, login) */
+  --glass-bg-heavy: 0 0% 100% / 0.9;
+  --glass-blur-heavy: 24px;
+  --glass-border-heavy: 0 0% 100% / 0.6;
+  --glass-shadow-heavy: 0 18px 48px hsl(0 0% 4% / 0.16);
+
+  /* Overlay */
+  --overlay-scrim: 0 0% 4% / 0.46;
 
   /* Sidebar */
   --sidebar-background: 0 0% 98%;
@@ -63,9 +107,13 @@
   --accent: 40 60% 60%;
   --accent-foreground: 0 0% 98%;
 
+  --accent-gradient-from: 35 70% 60%;
+  --accent-gradient-to: 45 55% 50%;
+
   --surface-1: 0 0% 4%;
   --surface-2: 0 0% 7%;
   --surface-3: 0 0% 14%;
+  --surface-4: 0 0% 10%;
 
   --text-primary: 0 0% 98%;
   --text-secondary: 0 0% 64%;
@@ -77,7 +125,6 @@
 
   --destructive: 0 62% 50%;
   --destructive-foreground: 0 0% 98%;
-
   --success: 142 76% 36%;
   --warning: 38 92% 50%;
 
@@ -95,6 +142,24 @@
   --chart-3: 0 0% 64%;
   --chart-4: 0 0% 40%;
   --chart-5: 0 0% 20%;
+
+  /* Glass — Dark Mode */
+  --glass-bg: 0 0% 7% / 0.7;
+  --glass-blur: 12px;
+  --glass-border: 0 0% 98% / 0.12;
+  --glass-shadow: 0 4px 16px hsl(0 0% 0% / 0.2);
+
+  --glass-bg-strong: 0 0% 7% / 0.85;
+  --glass-blur-strong: 18px;
+  --glass-border-strong: 0 0% 98% / 0.18;
+  --glass-shadow-strong: 0 14px 40px hsl(0 0% 0% / 0.3);
+
+  --glass-bg-heavy: 0 0% 10% / 0.92;
+  --glass-blur-heavy: 24px;
+  --glass-border-heavy: 0 0% 98% / 0.24;
+  --glass-shadow-heavy: 0 18px 48px hsl(0 0% 0% / 0.4);
+
+  --overlay-scrim: 0 0% 0% / 0.6;
 }
 
 /* ─── Tailwind v4 Theme Extension ───────────────────── */
@@ -122,6 +187,17 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
 
+  /* Surface elevation colors */
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
+
+  /* Text hierarchy colors */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
   --color-sidebar-background: var(--sidebar-background);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -137,10 +213,11 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
 
   --font-heading: "Cormorant Garamond", serif;
   --font-body: "Inter", sans-serif;
@@ -150,6 +227,7 @@
   --animate-fade-up: fade-up 0.6s ease-out forwards;
   --animate-slide-in-right: slide-in-right 0.3s ease-out forwards;
   --animate-slide-in-left: slide-in-left 0.3s ease-out forwards;
+  --animate-shimmer: shimmer 2s ease-in-out infinite;
 }
 
 /* ─── Keyframes ─────────────────────────────────────── */
@@ -187,6 +265,11 @@
   }
 }
 
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
 /* ─── Base Styles ───────────────────────────────────── */
 @layer base {
   * {
@@ -204,8 +287,8 @@
 
 /* ─── Custom Scrollbar ──────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -213,17 +296,17 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--text-muted));
-  border-radius: 4px;
+  background: hsl(var(--text-muted) / 0.4);
+  border-radius: var(--radius-full);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--text-secondary));
+  background: hsl(var(--text-secondary) / 0.6);
 }
 
 /* ─── Selection ─────────────────────────────────────── */
 ::selection {
-  background: hsl(var(--accent) / 0.3);
+  background: hsl(var(--accent) / 0.25);
   color: hsl(var(--text-primary));
 }
 
@@ -244,7 +327,63 @@
   animation: var(--animate-slide-in-left);
 }
 
-/* Marquee container */
+.animate-shimmer {
+  animation: var(--animate-shimmer);
+}
+
+/* ─── Glass Morphism ────────────────────────────────── */
+
+/* Level 1: Subtle — nav bars, subtle overlays */
+.glass-panel {
+  background: hsl(var(--glass-bg));
+  border: 1px solid hsl(var(--glass-border));
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--glass-shadow);
+}
+
+/* Level 2: Standard — cards, panels, drawers */
+.glass-panel-strong {
+  background: hsl(var(--glass-bg-strong));
+  border: 1px solid hsl(var(--glass-border-strong));
+  backdrop-filter: blur(var(--glass-blur-strong));
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong));
+  box-shadow: var(--glass-shadow-strong);
+}
+
+/* Level 3: Heavy — modals, search overlay, login */
+.glass-panel-heavy {
+  background: hsl(var(--glass-bg-heavy));
+  border: 1px solid hsl(var(--glass-border-heavy));
+  backdrop-filter: blur(var(--glass-blur-heavy));
+  -webkit-backdrop-filter: blur(var(--glass-blur-heavy));
+  box-shadow: var(--glass-shadow-heavy);
+}
+
+/* Overlay scrim */
+.overlay-scrim {
+  background: hsl(var(--overlay-scrim));
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* ─── Accent Gradient ───────────────────────────────── */
+.accent-gradient {
+  background: linear-gradient(135deg, hsl(var(--accent-gradient-from)), hsl(var(--accent-gradient-to)));
+}
+
+.accent-gradient-subtle {
+  background: linear-gradient(135deg, hsl(var(--accent-gradient-from) / 0.15), hsl(var(--accent-gradient-to) / 0.05));
+}
+
+.accent-gradient-text {
+  background: linear-gradient(135deg, hsl(var(--accent-gradient-from)), hsl(var(--accent-gradient-to)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Marquee ───────────────────────────────────────── */
 .marquee-container {
   overflow: hidden;
   white-space: nowrap;
@@ -255,14 +394,72 @@
   animation: var(--animate-marquee);
 }
 
-/* Reveal on scroll */
+/* ─── Reveal on scroll (CSS fallback, replaced by Framer Motion) ── */
 .reveal {
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  transition: opacity var(--motion-slow) var(--ease-emphasized), transform var(--motion-slow) var(--ease-emphasized);
 }
 
 .reveal.visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* ─── Shimmer Skeleton ──────────────────────────────── */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--surface-2)) 25%,
+    hsl(var(--surface-3)) 50%,
+    hsl(var(--surface-2)) 75%
+  );
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
+/* ─── Gradient Fade Edges (for marquee) ─────────────── */
+.gradient-fade-edges {
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+
+/* ─── Focus Ring ────────────────────────────────────── */
+.focus-ring {
+  outline: none;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid hsl(var(--accent));
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ─── Reduced Motion ────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-fade-up,
+  .animate-slide-in-right,
+  .animate-slide-in-left,
+  .animate-shimmer {
+    animation: none !important;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .skeleton-shimmer {
+    animation: none !important;
+    background: hsl(var(--surface-3));
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: var(--motion-instant) !important;
+  }
 }

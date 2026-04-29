@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { X } from "lucide-react";
+import { X, LayoutDashboard } from "lucide-react";
 import { useUIStore } from "@/stores/uiStore";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import { slideLeftVariants, overlayVariants } from "@/lib/motion";
 
 export function MobileMenu() {
   const { isMobileMenuOpen, closeMobileMenu } = useUIStore();
@@ -11,18 +13,26 @@ export function MobileMenu() {
   return (
     <>
       {/* Backdrop */}
-      {isMobileMenuOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
-          onClick={closeMobileMenu}
-        />
-      )}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            variants={overlayVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="fixed inset-0 z-40 overlay-scrim lg:hidden"
+            onClick={closeMobileMenu}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Menu panel */}
-      <div
+      <motion.div
+        variants={slideLeftVariants}
+        initial="hidden"
+        animate={isMobileMenuOpen ? "visible" : "hidden"}
         className={cn(
-          "fixed top-0 left-0 z-50 h-full w-80 max-w-[85vw] bg-white transform transition-transform duration-300 ease-out lg:hidden",
-          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          "fixed top-0 left-0 z-50 h-full w-80 max-w-[85vw] lg:hidden glass-panel-strong flex flex-col"
         )}
       >
         <div className="flex items-center justify-between p-4 border-b">
@@ -32,7 +42,7 @@ export function MobileMenu() {
           </button>
         </div>
 
-        <nav className="p-6">
+        <nav className="flex-1 p-6 overflow-y-auto">
           <ul className="space-y-6">
             <li>
               <Link
@@ -94,8 +104,20 @@ export function MobileMenu() {
               </li>
             </ul>
           </div>
+
+          {/* Dashboard access — separate section */}
+          <div className="mt-10 pt-6 border-t">
+            <Link
+              href="/admin/login"
+              onClick={closeMobileMenu}
+              className="flex items-center gap-3 text-sm text-muted-foreground hover:text-accent transition-colors"
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              Dashboard
+            </Link>
+          </div>
         </nav>
-      </div>
+      </motion.div>
     </>
   );
 }

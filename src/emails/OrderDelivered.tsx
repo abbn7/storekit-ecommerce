@@ -1,4 +1,4 @@
-import {
+﻿import {
   Html,
   Head,
   Body,
@@ -39,7 +39,7 @@ export function OrderDelivered({
             <Text style={{ marginTop: 0 }}>Dear {customerName},</Text>
             <Text>
               Your order has been delivered! We hope you love your new pieces.
-              If you have any issues, please don't hesitate to reach out.
+              If you have any issues, please don&apos;t hesitate to reach out.
             </Text>
 
             <Text style={{ fontSize: 18, marginTop: 32 }}>Order #{orderNumber}</Text>

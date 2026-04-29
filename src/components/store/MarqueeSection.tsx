@@ -1,14 +1,10 @@
-import Link from "next/link";
-import Image from "next/image";
-
-// I4 FIX: Accept marquee text from props, with configurable default
 interface MarqueeSectionProps {
   text?: string;
 }
 
 export function MarqueeSection({ text = "Luxury • Crafted • Timeless • Essential" }: MarqueeSectionProps) {
   return (
-    <section className="py-8 overflow-hidden border-y">
+    <section className="py-8 overflow-hidden border-y gradient-fade-edges">
       <div className="marquee-container">
         <div className="marquee-content flex items-center">
           {Array.from({ length: 6 }).map((_, i) => (

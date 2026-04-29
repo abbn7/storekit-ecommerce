@@ -1,0 +1,119 @@
+openapi: 3.1.0
+info:
+  title: StoreKit API
+  version: 1.0.0
+  description: Public, admin, and webhook contracts for StoreKit.
+servers:
+  - url: /
+components:
+  securitySchemes:
+    adminSession:
+      type: apiKey
+      in: cookie
+      name: admin_token
+  schemas:
+    ApiEnvelope:
+      type: object
+      properties:
+        data: {}
+        error:
+          type: [string, "null"]
+        meta:
+          type: [object, "null"]
+    OrderCreateRequest:
+      type: object
+      required: [items, email, firstName, lastName, address]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [productId, quantity]
+            properties:
+              productId: { type: string, format: uuid }
+              variantId: { type: string, format: uuid }
+              quantity: { type: integer, minimum: 1, maximum: 99 }
+        email: { type: string, format: email }
+        firstName: { type: string }
+        lastName: { type: string }
+        phone: { type: string }
+        address:
+          type: object
+          required: [addressLine1, city, state, postalCode, country]
+          properties:
+            addressLine1: { type: string }
+            addressLine2: { type: string }
+            city: { type: string }
+            state: { type: string }
+            postalCode: { type: string }
+            country: { type: string }
+paths:
+  /api/products:
+    get:
+      summary: List products
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100 }
+      responses:
+        "200":
+          description: Product list in api envelope
+  /api/orders:
+    post:
+      summary: Create order and Stripe checkout session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderCreateRequest"
+      responses:
+        "201":
+          description: Created order and checkout URL
+        "400":
+          description: Validation or business constraint error
+        "500":
+          description: Internal error
+  /api/orders/{id}:
+    get:
+      summary: Get order by id (admin) or by session_id (public constrained)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: session_id
+          schema: { type: string }
+      responses:
+        "200": { description: Order envelope }
+        "401": { description: Unauthorized }
+        "404": { description: Not found }
+  /api/admin/auth:
+    post:
+      summary: Admin login
+      responses:
+        "200": { description: Auth success and cookie set }
+        "401": { description: Invalid credentials }
+    delete:
+      summary: Admin logout
+      responses:
+        "200": { description: Logged out }
+  /api/admin/analytics:
+    get:
+      summary: Admin analytics overview
+      security:
+        - adminSession: []
+      responses:
+        "200": { description: Analytics envelope }
+        "401": { description: Unauthorized }
+  /api/webhooks/stripe:
+    post:
+      summary: Stripe webhook endpoint
+      responses:
+        "200": { description: Event processed or deduplicated }
+        "400": { description: Invalid signature or payload }

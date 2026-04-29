@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User } from "lucide-react";
+import { FadeIn } from "@/lib/motion";
 
 export default function AccountSettingsPage() {
   const { user, isLoaded } = useUser(); // M9 FIX: Get Clerk user data
@@ -45,60 +46,66 @@ export default function AccountSettingsPage() {
   return (
     <div className="pt-24 pb-16">
       <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
-        <h1 className="font-heading text-4xl font-light tracking-wide mb-12">
-          Account Settings
-        </h1>
+        <FadeIn>
+          <h1 className="font-heading text-4xl font-light tracking-wide mb-12">
+            Account Settings
+          </h1>
+        </FadeIn>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-heading text-lg flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Profile Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    name="firstName"
-                    defaultValue={user?.firstName ?? ""}
-                  />
+          <FadeIn delay={0.1}>
+            <Card className="glass-panel border-0">
+              <CardHeader>
+                <CardTitle className="font-heading text-lg flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Profile Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      name="firstName"
+                      defaultValue={user?.firstName ?? ""}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      name="lastName"
+                      defaultValue={user?.lastName ?? ""}
+                    />
+                  </div>
                 </div>
                 <div>
-                  <Label htmlFor="lastName">Last Name</Label>
+                  <Label htmlFor="email">Email</Label>
                   <Input
-                    id="lastName"
-                    name="lastName"
-                    defaultValue={user?.lastName ?? ""}
+                    id="email"
+                    name="email"
+                    type="email"
+                    defaultValue={user?.emailAddresses[0]?.emailAddress ?? ""}
+                    disabled
                   />
                 </div>
-              </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  defaultValue={user?.emailAddresses[0]?.emailAddress ?? ""}
-                  disabled
-                />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </FadeIn>
 
           {error && (
             <p className="text-sm text-destructive">{error}</p>
           )}
 
-          <div className="flex items-center gap-4">
-            <Button type="submit" disabled={loading || !isLoaded}>
-              {loading ? "Saving..." : "Save Changes"}
-            </Button>
-            {saved && <span className="text-sm text-green-600">Settings saved!</span>}
-          </div>
+          <FadeIn delay={0.2}>
+            <div className="flex items-center gap-4">
+              <Button type="submit" disabled={loading || !isLoaded} className="accent-gradient text-white hover:opacity-90 transition-opacity">
+                {loading ? "Saving..." : "Save Changes"}
+              </Button>
+              {saved && <span className="text-sm text-green-600">Settings saved!</span>}
+            </div>
+          </FadeIn>
         </form>
       </div>
     </div>

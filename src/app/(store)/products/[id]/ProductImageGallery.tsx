@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Package } from "lucide-react"; // I1 FIX: Import icon for placeholder
+import { scaleFadeVariants, fadeUpVariants, ease, duration } from "@/lib/motion";
 
 interface ProductImage {
   url: string;
@@ -23,9 +25,15 @@ export function ProductImageGallery({ images }: ProductImageGalleryProps) {
     : [{ url: "", altText: "No image available" }];
 
   return (
-    <div className="space-y-4">
+    <motion.div
+      className="space-y-4"
+      variants={fadeUpVariants}
+      initial="hidden"
+      animate="visible"
+      transition={{ duration: duration.slow, ease: ease.emphasized }}
+    >
       {/* Main image */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+      <div className="relative aspect-[3/4] overflow-hidden bg-muted rounded-lg">
         {displayImages[selectedIndex]?.url ? (
           <Image
             src={displayImages[selectedIndex].url}
@@ -47,11 +55,15 @@ export function ProductImageGallery({ images }: ProductImageGalleryProps) {
       {displayImages.length > 1 && (
         <div className="flex gap-3">
           {displayImages.map((img, i) => (
-            <button
+            <motion.button
               key={i}
               onClick={() => setSelectedIndex(i)}
+              variants={scaleFadeVariants}
+              initial="hidden"
+              animate="visible"
+              transition={{ delay: 0.1 + i * 0.05, duration: duration.base }}
               className={cn(
-                "relative w-20 h-24 overflow-hidden bg-muted border-2 transition-colors",
+                "relative w-20 h-24 overflow-hidden bg-muted border-2 transition-colors rounded-md",
                 selectedIndex === i ? "border-foreground" : "border-transparent"
               )}
             >
@@ -68,10 +80,10 @@ export function ProductImageGallery({ images }: ProductImageGalleryProps) {
                   <Package className="h-6 w-6 text-muted-foreground" />
                 </div>
               )}
-            </button>
+            </motion.button>
           ))}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

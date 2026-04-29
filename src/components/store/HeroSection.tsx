@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+import { fadeUpVariants, duration, ease } from "@/lib/motion";
 
 interface HeroSectionProps {
   title?: string;
@@ -33,23 +37,43 @@ export function HeroSection({
       {/* Content */}
       <div className="relative z-10 flex items-center justify-center h-full">
         <div className="text-center text-white max-w-2xl px-4">
-          <h1 className="font-heading text-5xl sm:text-6xl lg:text-7xl font-light tracking-wide mb-4 animate-fade-up">
+          <motion.h1
+            variants={fadeUpVariants}
+            initial="hidden"
+            animate="visible"
+            transition={{ duration: duration.slow, ease: ease.emphasized, delay: 0.2 }}
+            className="font-heading text-5xl sm:text-6xl lg:text-7xl font-light tracking-wide mb-4"
+          >
             {title}
-          </h1>
-          <p className="text-lg sm:text-xl font-light tracking-wide text-white/80 mb-8 animate-fade-up" style={{ animationDelay: "0.2s" }}>
+          </motion.h1>
+          <motion.p
+            variants={fadeUpVariants}
+            initial="hidden"
+            animate="visible"
+            transition={{ duration: duration.slow, ease: ease.emphasized, delay: 0.4 }}
+            className="text-lg sm:text-xl font-light tracking-wide text-white/80 mb-8"
+          >
             {subtitle}
-          </p>
-          <div className="animate-fade-up" style={{ animationDelay: "0.4s" }}>
+          </motion.p>
+          <motion.div
+            variants={fadeUpVariants}
+            initial="hidden"
+            animate="visible"
+            transition={{ duration: duration.slow, ease: ease.emphasized, delay: 0.6 }}
+          >
             <Button
               asChild
               size="lg"
-              className="bg-white text-foreground hover:bg-white/90 px-8 py-6 text-xs tracking-[0.2em] uppercase font-medium"
+              className="bg-white text-foreground hover:bg-white/90 px-8 py-6 text-xs tracking-[0.2em] uppercase font-medium rounded-lg"
             >
               <Link href={ctaLink}>{ctaText}</Link>
             </Button>
-          </div>
+          </motion.div>
         </div>
       </div>
+
+      {/* Bottom gradient fade */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
     </section>
   );
 }

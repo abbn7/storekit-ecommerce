@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { formatPrice } from "@/lib/utils";
 import { DataTable } from "../products/DataTable";
 
+type OrderRow = { id: string; total: number; createdAt: string; [key: string]: unknown };
+
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState<OrderRow[]>([]);
 
   useEffect(() => {
     fetch("/api/admin/orders")

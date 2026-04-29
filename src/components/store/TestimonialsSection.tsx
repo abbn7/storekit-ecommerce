@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import { Star } from "lucide-react";
+import { FadeIn, StaggerContainer, StaggerItem } from "@/lib/motion";
 
 interface TestimonialsSectionProps {
   testimonials?: {
@@ -45,51 +48,55 @@ export function TestimonialsSection({ testimonials }: TestimonialsSectionProps) 
   return (
     <section className="py-20 lg:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h2 className="font-heading text-3xl sm:text-4xl font-light tracking-wide text-center mb-16">
-          What Our Clients Say
-        </h2>
+        <FadeIn>
+          <h2 className="font-heading text-3xl sm:text-4xl font-light tracking-wide text-center mb-16">
+            What Our Clients Say
+          </h2>
+        </FadeIn>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+        <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
           {items.map((testimonial) => (
-            <div key={testimonial.id} className="text-center">
-              {/* Stars */}
-              <div className="flex items-center justify-center gap-1 mb-6">
-                {Array.from({ length: testimonial.rating }).map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-accent text-accent" />
-                ))}
-              </div>
+            <StaggerItem key={testimonial.id}>
+              <div className="glass-panel rounded-2xl p-8 text-center h-full">
+                {/* Stars */}
+                <div className="flex items-center justify-center gap-1 mb-6">
+                  {Array.from({ length: testimonial.rating }).map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-accent text-accent" />
+                  ))}
+                </div>
 
-              {/* Quote */}
-              <blockquote className="font-heading text-xl sm:text-2xl font-light leading-relaxed mb-6">
-                &ldquo;{testimonial.content}&rdquo;
-              </blockquote>
+                {/* Quote */}
+                <blockquote className="font-heading text-xl sm:text-2xl font-light leading-relaxed mb-6">
+                  &ldquo;{testimonial.content}&rdquo;
+                </blockquote>
 
-              {/* Author */}
-              <div className="flex items-center justify-center gap-3">
-                {testimonial.avatar_url ? (
-                  <div className="relative h-10 w-10 rounded-full overflow-hidden">
-                    <Image
-                      src={testimonial.avatar_url}
-                      alt={testimonial.author_name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-sm font-medium">
-                    {testimonial.author_name.charAt(0)}
-                  </div>
-                )}
-                <div className="text-left">
-                  <p className="text-sm font-medium">{testimonial.author_name}</p>
-                  {testimonial.author_title && (
-                    <p className="text-xs text-muted-foreground">{testimonial.author_title}</p>
+                {/* Author */}
+                <div className="flex items-center justify-center gap-3">
+                  {testimonial.avatar_url ? (
+                    <div className="relative h-10 w-10 rounded-full overflow-hidden">
+                      <Image
+                        src={testimonial.avatar_url}
+                        alt={testimonial.author_name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-sm font-medium accent-gradient-text">
+                      {testimonial.author_name.charAt(0)}
+                    </div>
                   )}
+                  <div className="text-left">
+                    <p className="text-sm font-medium">{testimonial.author_name}</p>
+                    {testimonial.author_title && (
+                      <p className="text-xs text-muted-foreground">{testimonial.author_title}</p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
       </div>
     </section>
   );

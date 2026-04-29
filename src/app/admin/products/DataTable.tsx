@@ -10,20 +10,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-interface Column {
+interface Column<T> {
   key: string;
   label: string;
-  render?: (row: Record<string, any>) => React.ReactNode;
+  render?: (row: T) => React.ReactNode;
 }
 
-interface DataTableProps {
-  data: Record<string, any>[];
-  columns: Column[];
-  getRowHref?: (row: Record<string, any>) => string | undefined;
+interface DataTableProps<T> {
+  data: T[];
+  columns: Column<T>[];
+  getRowHref?: (row: T) => string | undefined;
   rowKey?: string; // L2 FIX: Allow specifying a unique key field
 }
 
-export function DataTable({ data, columns, getRowHref, rowKey = "id" }: DataTableProps) {
+export function DataTable<T extends object>({ data, columns, getRowHref, rowKey = "id" }: DataTableProps<T>) {
   if (data.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -44,8 +44,9 @@ export function DataTable({ data, columns, getRowHref, rowKey = "id" }: DataTabl
         </TableHeader>
         <TableBody>
           {data.map((row) => {
+            const record = row as Record<string, unknown>;
             // L2 FIX: Use unique key from row data instead of array index
-            const key = row[rowKey] ?? row.id ?? JSON.stringify(row);
+            const key = String(record[rowKey] ?? record.id ?? JSON.stringify(row));
             const href = getRowHref?.(row);
             const rowContent = (
               <TableRow key={key} className={href ? "cursor-pointer hover:bg-muted/50" : undefined}>
@@ -53,11 +54,11 @@ export function DataTable({ data, columns, getRowHref, rowKey = "id" }: DataTabl
                   <TableCell key={col.key}>
                     {col.render
                       ? col.render(row)
-                      : typeof row[col.key] === "boolean"
-                        ? row[col.key]
+                      : typeof record[col.key] === "boolean"
+                        ? record[col.key]
                           ? "Yes"
                           : "No"
-                        : String(row[col.key] ?? "-")}
+                        : String(record[col.key] ?? "-")}
                   </TableCell>
                 ))}
               </TableRow>

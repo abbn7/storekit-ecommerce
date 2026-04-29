@@ -2,16 +2,17 @@ export interface StoreConfig {
   id: string;
   name: string;
   description: string | null;
-  logo_url: string | null;
-  favicon_url: string | null;
-  primary_color: string;
-  accent_color: string;
+  logoUrl: string | null;
+  faviconUrl: string | null;
+  primaryColor: string;
+  accentColor: string;
   currency: string;
-  social_links: SocialLinks | null;
-  free_shipping_threshold: number | null;
-  shipping_cost: number;
+  socialLinks: SocialLinks | null;
+  freeShippingThreshold: number | null;
+  shippingCost: number;
   // PostgreSQL numeric type returns strings; use parseFloat() when computing
-  tax_rate: string;
+  taxRate: string;
+  updatedAt: string;
 }
 
 export interface SocialLinks {
@@ -23,39 +24,39 @@ export interface SocialLinks {
 }
 
 export interface StoreTheme {
-  primary_color: string;
-  accent_color: string;
-  font_heading: string;
-  font_body: string;
-  font_display: string;
+  primaryColor: string;
+  accentColor: string;
+  fontHeading: string;
+  fontBody: string;
+  fontDisplay: string;
 }
 
 export interface Announcement {
   id: string;
   text: string;
-  link_url: string | null;
-  is_active: boolean;
-  sort_order: number;
+  linkUrl: string | null;
+  isActive: boolean;
+  sortOrder: number;
 }
 
 export interface Banner {
   id: string;
   title: string;
   subtitle: string | null;
-  image_url: string;
-  link_url: string | null;
+  imageUrl: string;
+  linkUrl: string | null;
   position: "hero" | "middle" | "bottom";
-  is_active: boolean;
-  sort_order: number;
+  isActive: boolean;
+  sortOrder: number;
 }
 
 export interface Testimonial {
   id: string;
-  author_name: string;
-  author_title: string | null;
+  authorName: string;
+  authorTitle: string | null;
   content: string;
-  avatar_url: string | null;
+  avatarUrl: string | null;
   rating: number;
-  is_active: boolean;
-  sort_order: number;
+  isActive: boolean;
+  sortOrder: number;
 }

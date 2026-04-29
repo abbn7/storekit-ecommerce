@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { loginAdmin, logoutAdmin, checkRateLimit } from "@/lib/admin-auth";
+import { loginAdmin, logoutAdmin, checkRateLimit, verifyAdminSession } from "@/lib/admin-auth";
 import { apiResponse, apiError } from "@/lib/api-response";
 import { z } from "zod";
 import { formatZodError } from "@/lib/utils";
@@ -10,10 +10,14 @@ const loginSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting by IP
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    // CRITICAL FIX: Use the most trusted IP source. Never use the leftmost x-forwarded-for
+    // as it can be spoofed by the client. Vercel's x-vercel-forwarded-for is trustworthy.
+    const forwardedFor = request.headers.get("x-forwarded-for");
+    const ip = request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim()
       || request.headers.get("x-real-ip")
+      || (forwardedFor ? forwardedFor.split(",").pop()?.trim() : undefined)
       || "unknown";
+
     const rateCheck = await checkRateLimit(ip);
     if (!rateCheck.allowed) {
       return apiError(
@@ -36,6 +40,17 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Admin login error:", error);
     return apiError("Login failed", 500);
+  }
+}
+
+export async function GET() {
+  try {
+    const isAuth = await verifyAdminSession();
+    if (!isAuth) return apiError("Not authenticated", 401);
+    return apiResponse({ authenticated: true });
+  } catch (error) {
+    console.error("Admin auth check error:", error);
+    return apiError("Auth check failed", 500);
   }
 }
 

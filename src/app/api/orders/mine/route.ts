@@ -4,7 +4,7 @@ import { getOrdersByUserId, getOrderById } from "@/lib/db/queries/orders";
 import { apiResponse, apiError } from "@/lib/api-response";
 
 // I3 FIX: Public endpoint for authenticated users to fetch their own orders
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const { userId } = await auth();
 

@@ -1,4 +1,3 @@
-import { NextRequest } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { getSalesData, getTopProducts, getOrderStats, getProductsCount } from "@/lib/db/queries/analytics";
 import { apiResponse, apiError } from "@/lib/api-response";

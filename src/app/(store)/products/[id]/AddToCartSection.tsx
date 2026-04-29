@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { Heart, Minus, Plus, ShoppingBag } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/stores/cartStore";
 import { useWishlistStore } from "@/stores/wishlistStore";
 import { useUIStore } from "@/stores/uiStore";
 import { formatPrice, cn } from "@/lib/utils";
+import { FadeIn, hoverScale } from "@/lib/motion";
 
 interface VariantOption {
   id: string;
@@ -100,7 +102,7 @@ export function AddToCartSection({
   };
 
   return (
-    <div className="space-y-6">
+    <FadeIn delay={0.15} className="space-y-6">
       {/* Title & Price */}
       <div>
         <h1 className="font-heading text-3xl sm:text-4xl font-light tracking-wide">
@@ -189,23 +191,38 @@ export function AddToCartSection({
 
       {/* Actions */}
       <div className="flex gap-3">
-        <Button onClick={handleAddToCart} className="flex-1 py-6 text-xs tracking-wider uppercase" disabled={activeMaxStock <= 0}>
-          <ShoppingBag className="h-4 w-4 mr-2" />
-          {activeMaxStock <= 0 ? "Out of Stock" : "Add to Cart"}
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-auto py-6 px-4"
-          onClick={handleWishlist}
+        <motion.div
+          className="flex-1"
+          whileHover={hoverScale.whileHover}
+          whileTap={hoverScale.whileTap}
         >
-          <Heart
-            className={cn(
-              "h-5 w-5",
-              wishlisted ? "fill-destructive text-destructive" : ""
-            )}
-          />
-        </Button>
+          <Button
+            onClick={handleAddToCart}
+            className="w-full py-6 text-xs tracking-wider uppercase accent-gradient text-white hover:opacity-90 transition-opacity"
+            disabled={activeMaxStock <= 0}
+          >
+            <ShoppingBag className="h-4 w-4 mr-2" />
+            {activeMaxStock <= 0 ? "Out of Stock" : "Add to Cart"}
+          </Button>
+        </motion.div>
+        <motion.div
+          whileHover={hoverScale.whileHover}
+          whileTap={hoverScale.whileTap}
+        >
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-auto py-6 px-4"
+            onClick={handleWishlist}
+          >
+            <Heart
+              className={cn(
+                "h-5 w-5",
+                wishlisted ? "fill-destructive text-destructive" : ""
+              )}
+            />
+          </Button>
+        </motion.div>
       </div>
 
       {/* Care instructions */}
@@ -217,6 +234,6 @@ export function AddToCartSection({
           </p>
         </div>
       )}
-    </div>
+    </FadeIn>
   );
 }

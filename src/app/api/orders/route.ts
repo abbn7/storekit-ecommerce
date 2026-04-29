@@ -1,14 +1,15 @@
 import { NextRequest } from "next/server";
-import { createOrder, createOrderItem, deleteOrder } from "@/lib/db/queries/orders";
+import { deleteOrder, restoreStock } from "@/lib/db/queries/orders";
 import { getProductById } from "@/lib/db/queries/products";
 import { getStoreConfig } from "@/lib/db/queries/store";
 import { createCheckoutSession, calculateOrderAmount } from "@/lib/stripe";
 import { apiResponse, apiError } from "@/lib/api-response";
 import { db } from "@/lib/db";
-import { orders, orderItems } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { orders, orderItems, productVariants } from "@/lib/db/schema";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { formatZodError } from "@/lib/utils";
+import { auth } from "@clerk/nextjs/server";
 
 // Zod schema for order creation
 const orderItemSchema = z.object({
@@ -34,7 +35,6 @@ const createOrderSchema = z.object({
   lastName: z.string().min(1).max(255),
   phone: z.string().max(50).optional(),
   address: addressSchema,
-  clerkUserId: z.string().optional(), // C2 FIX: Accept clerk user ID
 });
 
 export async function POST(request: NextRequest) {
@@ -47,9 +47,11 @@ export async function POST(request: NextRequest) {
       return apiError(`Validation error: ${formatZodError(parsed.error)}`, 400);
     }
 
-    const { items, email, firstName, lastName, phone, address, clerkUserId } = parsed.data;
+    const { items, email, firstName, lastName, phone, address } = parsed.data;
+    const { userId } = await auth();
 
     // CRITICAL FIX: Fetch product prices from DB — never trust client-submitted prices
+    // Stock check is moved inside the transaction for atomicity
     const dbItems: {
       productId: string;
       variantId?: string;
@@ -81,9 +83,7 @@ export async function POST(request: NextRequest) {
         if (!variant.isActive) {
           return apiError(`Variant is not available: ${variant.name}`, 400);
         }
-        if (variant.stock < item.quantity) {
-          return apiError(`Insufficient stock for variant: ${variant.name}`, 400);
-        }
+        // Stock is checked atomically inside the transaction, not here
         price = variant.price;
         variantName = variant.name;
       }
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     const config = await getStoreConfig();
     const taxRate = config ? parseFloat(config.taxRate) : 0;
 
-    const { subtotal, shipping, tax, total } = calculateOrderAmount(
+    const { subtotal, shipping, tax } = calculateOrderAmount(
       dbItems.map((item) => ({ price: item.price, quantity: item.quantity })),
       config?.shippingCost ?? 0,
       taxRate
@@ -114,7 +114,8 @@ export async function POST(request: NextRequest) {
       : shipping;
     const finalTotal = subtotal + finalShipping + tax;
 
-    // Create order and items in a transaction to prevent partial data
+    // CRITICAL FIX: Create order and reserve stock atomically in a transaction
+    // This prevents race conditions where two orders check stock simultaneously
     const order = await db.transaction(async (tx) => {
       const [created] = await tx
         .insert(orders)
@@ -135,7 +136,7 @@ export async function POST(request: NextRequest) {
           tax,
           total: finalTotal,
           stripeSessionId: null,
-          clerkUserId: clerkUserId || null, // C2 FIX: Link order to Clerk user
+          clerkUserId: userId || null,
         })
         .returning();
 
@@ -153,8 +154,23 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // NOTE: Stock is NOT decremented here — it's decremented in the Stripe webhook
-      // when payment is confirmed. This prevents stock issues if payment fails.
+      // CRITICAL FIX: Atomically decrement stock to prevent race conditions
+      // Uses UPDATE with WHERE clause — if stock is insufficient, update returns 0 rows
+      for (const item of dbItems) {
+        if (item.variantId) {
+          const [updated] = await tx
+            .update(productVariants)
+            .set({ stock: sql`${productVariants.stock} - ${item.quantity}` })
+            .where(
+              sql`${productVariants.id} = ${item.variantId} AND ${productVariants.stock} >= ${item.quantity}`
+            )
+            .returning({ stock: productVariants.stock });
+
+          if (!updated) {
+            throw new Error(`Insufficient stock for variant: ${item.variantId}`);
+          }
+        }
+      }
 
       return created;
     });
@@ -181,8 +197,9 @@ export async function POST(request: NextRequest) {
         currency: config?.currency ?? "USD",
       });
     } catch (stripeError) {
-      // Stripe session creation failed — delete the orphaned order
-      console.error("Stripe session creation failed, cleaning up order:", stripeError);
+      // CRITICAL FIX: Stripe session creation failed — restore stock before deleting order
+      console.error("Stripe session creation failed, restoring stock and cleaning up order:", stripeError);
+      await restoreStock(order.id);
       await deleteOrder(order.id);
       return apiError("Failed to create payment session. Please try again.", 500);
     }

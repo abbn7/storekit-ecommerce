@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useReducer, useEffect } from "react";
 import type { StoreConfig } from "@/types";
 
 // TTL-based cache: refreshes every 5 minutes so admin updates propagate
@@ -8,33 +8,66 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 let cachedConfig: StoreConfig | null = null;
 let cacheTimestamp: number = 0;
 
+interface ConfigState {
+  config: StoreConfig | null;
+  loading: boolean;
+}
+
+type ConfigAction =
+  | { type: "FETCH_START" }
+  | { type: "FETCH_SUCCESS"; config: StoreConfig }
+  | { type: "FETCH_ERROR" };
+
+function configReducer(state: ConfigState, action: ConfigAction): ConfigState {
+  switch (action.type) {
+    case "FETCH_START":
+      return { ...state, loading: true };
+    case "FETCH_SUCCESS":
+      return { config: action.config, loading: false };
+    case "FETCH_ERROR":
+      return { ...state, loading: false };
+    default:
+      return state;
+  }
+}
+
+function getInitialConfigState(): ConfigState {
+  const now = Date.now();
+  const isCacheValid = cachedConfig && (now - cacheTimestamp) < CACHE_TTL_MS;
+  if (isCacheValid) {
+    return { config: cachedConfig, loading: false };
+  }
+  return { config: cachedConfig, loading: true };
+}
+
 export function useStoreConfig() {
-  const [config, setConfig] = useState<StoreConfig | null>(cachedConfig);
-  const [loading, setLoading] = useState(false);
+  const [state, dispatch] = useReducer(configReducer, undefined, getInitialConfigState);
 
   useEffect(() => {
     const now = Date.now();
     const isCacheValid = cachedConfig && (now - cacheTimestamp) < CACHE_TTL_MS;
 
     if (isCacheValid) {
-      setConfig(cachedConfig);
-      setLoading(false);
       return;
     }
 
-    setLoading(true);
+    dispatch({ type: "FETCH_START" });
     fetch("/api/store-config")
       .then((res) => res.json())
       .then((data) => {
         if (data.data) {
           cachedConfig = data.data;
           cacheTimestamp = Date.now();
-          setConfig(data.data);
+          dispatch({ type: "FETCH_SUCCESS", config: data.data });
+        } else {
+          dispatch({ type: "FETCH_ERROR" });
         }
       })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        console.error(err);
+        dispatch({ type: "FETCH_ERROR" });
+      });
   }, []);
 
-  return { config, loading };
+  return { config: state.config, loading: state.loading };
 }

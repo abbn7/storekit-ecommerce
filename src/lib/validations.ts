@@ -1,32 +1,53 @@
 import { z } from "zod";
 
+// ─── Sanitization Helpers ────────────────────────────
+
+// Strip all HTML tags (for plain text fields)
+export function stripHtml(input: string): string {
+  if (!input) return input;
+  return input.replace(/<[^>]*>/g, "");
+}
+
+// Sanitize HTML: remove dangerous tags and attributes (for rich text fields)
+const DANGEROUS_TAGS = /<(script|style|iframe|object|embed|form|input|textarea|button|link|meta)[\s\S]*?>[\s\S]*?<\/\1>/gi;
+const EVENT_HANDLERS = /\s*on\w+\s*=\s*["'][^"']*["']/gi;
+const JS_URLS = /javascript:/gi;
+
+export function sanitizeHtml(input: string): string {
+  if (!input) return input;
+  return input
+    .replace(DANGEROUS_TAGS, "")
+    .replace(EVENT_HANDLERS, "")
+    .replace(JS_URLS, "");
+}
+
 // ─── Product ─────────────────────────────────────────
 export const createProductSchema = z.object({
-  name: z.string().min(1).max(255),
-  slug: z.string().min(1).max(255),
-  description: z.string().min(1),
-  shortDescription: z.string().max(500).optional(),
+  name: z.string().min(1).max(255).transform(stripHtml),
+  slug: z.string().min(1).max(255).transform(stripHtml),
+  description: z.string().min(1).transform(sanitizeHtml),
+  shortDescription: z.string().max(500).optional().transform((val) => val ? sanitizeHtml(val) : val),
   price: z.number().int().min(0),
   compareAtPrice: z.number().int().min(0).optional(),
   cost: z.number().int().min(0).optional(),
-  sku: z.string().max(100).optional(),
-  barcode: z.string().max(100).optional(),
+  sku: z.string().max(100).optional().transform((val) => val ? stripHtml(val) : val),
+  barcode: z.string().max(100).optional().transform((val) => val ? stripHtml(val) : val),
   isActive: z.boolean().default(true),
   isFeatured: z.boolean().default(false),
   isNew: z.boolean().default(false),
-  material: z.string().max(255).optional(),
-  careInstructions: z.string().optional(),
-  metaTitle: z.string().max(255).optional(),
-  metaDescription: z.string().optional(),
+  material: z.string().max(255).optional().transform((val) => val ? stripHtml(val) : val),
+  careInstructions: z.string().optional().transform((val) => val ? sanitizeHtml(val) : val),
+  metaTitle: z.string().max(255).optional().transform((val) => val ? stripHtml(val) : val),
+  metaDescription: z.string().optional().transform((val) => val ? sanitizeHtml(val) : val),
 });
 
 export const updateProductSchema = createProductSchema.partial();
 
 // ─── Collection ──────────────────────────────────────
 export const createCollectionSchema = z.object({
-  name: z.string().min(1).max(255),
-  slug: z.string().min(1).max(255),
-  description: z.string().optional(),
+  name: z.string().min(1).max(255).transform(stripHtml),
+  slug: z.string().min(1).max(255).transform(stripHtml),
+  description: z.string().optional().transform((val) => val ? sanitizeHtml(val) : val),
   imageUrl: z.string().url().optional(),
   sortOrder: z.number().int().min(0).default(0),
   isActive: z.boolean().default(true),
@@ -41,8 +62,8 @@ export const updateOrderStatusSchema = z.object({
 
 // ─── Store Config ────────────────────────────────────
 export const updateStoreConfigSchema = z.object({
-  name: z.string().min(1).max(255).optional(),
-  description: z.string().optional(),
+  name: z.string().min(1).max(255).optional().transform((val) => val ? stripHtml(val) : val),
+  description: z.string().optional().transform((val) => val ? sanitizeHtml(val) : val),
   logoUrl: z.string().url().optional().nullable(),
   faviconUrl: z.string().url().optional().nullable(),
   primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
@@ -56,8 +77,8 @@ export const updateStoreConfigSchema = z.object({
 
 // ─── Banner ──────────────────────────────────────────
 export const createBannerSchema = z.object({
-  title: z.string().min(1).max(255),
-  subtitle: z.string().optional(),
+  title: z.string().min(1).max(255).transform(stripHtml),
+  subtitle: z.string().optional().transform((val) => val ? stripHtml(val) : val),
   imageUrl: z.string().min(1),
   linkUrl: z.string().optional(),
   position: z.enum(["hero", "middle", "bottom"]).default("hero"),
@@ -69,7 +90,7 @@ export const updateBannerSchema = createBannerSchema.partial();
 
 // ─── Announcement ────────────────────────────────────
 export const createAnnouncementSchema = z.object({
-  text: z.string().min(1),
+  text: z.string().min(1).transform(sanitizeHtml),
   linkUrl: z.string().optional(),
   isActive: z.boolean().default(true),
   sortOrder: z.number().int().min(0).default(0),
@@ -79,9 +100,9 @@ export const updateAnnouncementSchema = createAnnouncementSchema.partial();
 
 // ─── Testimonial ─────────────────────────────────────
 export const createTestimonialSchema = z.object({
-  authorName: z.string().min(1).max(255),
-  authorTitle: z.string().max(255).optional(),
-  content: z.string().min(1),
+  authorName: z.string().min(1).max(255).transform(stripHtml),
+  authorTitle: z.string().max(255).optional().transform((val) => val ? stripHtml(val) : val),
+  content: z.string().min(1).transform(sanitizeHtml),
   avatarUrl: z.string().url().optional().nullable(),
   rating: z.number().int().min(1).max(5).default(5),
   isActive: z.boolean().default(true),

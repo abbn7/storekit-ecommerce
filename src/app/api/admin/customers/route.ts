@@ -4,13 +4,13 @@ import { verifyAdminSession } from "@/lib/admin-auth";
 import { apiResponse, apiError } from "@/lib/api-response";
 import { db } from "@/lib/db";
 import { orders } from "@/lib/db/schema";
-import { count, eq } from "drizzle-orm";
+import { count } from "drizzle-orm";
 
 // I6 FIX: Simple in-memory cache with TTL for Clerk users
 let cachedCustomers: { data: unknown[]; timestamp: number } | null = null;
 const CACHE_TTL_MS = 60 * 1000; // 1 minute
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const isAuth = await verifyAdminSession();
     if (!isAuth) return apiError("Unauthorized", 401);

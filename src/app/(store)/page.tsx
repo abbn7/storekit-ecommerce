@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getFeaturedProducts, getNewArrivals } from "@/lib/db/queries/products";
+import { getNewArrivals } from "@/lib/db/queries/products";
 import { getCollections } from "@/lib/db/queries/collections";
 import { getActiveBanners, getActiveTestimonials } from "@/lib/db/queries/store";
 import { HeroSection } from "@/components/store/HeroSection";
@@ -14,9 +14,8 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  // M4 FIX: Fetch dynamic data from DB instead of using only static fallbacks
-  const [featuredProducts, newArrivalsProducts, collections, heroBanners, testimonials] = await Promise.all([
-    getFeaturedProducts(8).catch(() => []),
+  // Fetch dynamic data from DB with graceful fallbacks
+  const [newArrivalsProducts, collections, heroBanners, testimonials] = await Promise.all([
     getNewArrivals(8).catch(() => []),
     getCollections().catch(() => []),
     getActiveBanners("hero").catch(() => []),
@@ -42,14 +41,18 @@ export default async function HomePage() {
     rating: t.rating,
   }));
 
-  // Products from DB don't include images in simple queries, so provide empty arrays
+  // Products now include images from getNewArrivals (batch-fetched)
   const mappedNewArrivals = newArrivalsProducts.map((p) => ({
     id: p.id,
     name: p.name,
     slug: p.slug,
     price: p.price,
     compareAtPrice: p.compareAtPrice,
-    images: [] as { url: string; alt_text: string | null; is_primary: boolean }[],
+    images: ("images" in p ? (p as { images: { url: string; altText: string | null; isPrimary: boolean }[] }).images : []).map((img) => ({
+      url: img.url,
+      alt_text: img.altText,
+      is_primary: img.isPrimary,
+    })),
     isNew: true,
   }));
 

@@ -8,6 +8,8 @@ import { useCartStore } from "@/stores/cartStore";
 import { useUIStore } from "@/stores/uiStore";
 import { formatPrice, cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { motion, AnimatePresence } from "framer-motion";
+import { hoverScale } from "@/lib/motion";
 
 interface ProductCardProps {
   id: string;
@@ -29,7 +31,7 @@ export function ProductCard({
   compareAtPrice,
   images,
   isNew,
-  isFeatured,
+  isFeatured: _isFeatured,
   stock,
 }: ProductCardProps) {
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
@@ -55,7 +57,7 @@ export function ProductCard({
       compare_at_price: compareAtPrice,
       quantity: 1,
       image_url: primaryImage || "",
-      max_stock: stock ?? 10, // L8 FIX: Default to 10 instead of 99 to prevent over-ordering
+      max_stock: stock ?? 10,
     });
     openCart();
   };
@@ -77,10 +79,14 @@ export function ProductCard({
   };
 
   return (
-    <div className="group relative">
+    <motion.div
+      className="group relative"
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.15 }}
+    >
       <Link href={`/products/${slug}`} className="block">
         {/* Image container */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+        <div className="relative aspect-[3/4] overflow-hidden bg-muted rounded-lg">
           {primaryImage ? (
             <>
               <Image
@@ -109,22 +115,23 @@ export function ProductCard({
           {/* Badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-1.5">
             {isNew && (
-              <Badge variant="secondary" className="text-[10px] tracking-wider uppercase">
+              <Badge variant="secondary" className="text-[10px] tracking-wider uppercase glass-panel border-0">
                 New
               </Badge>
             )}
             {isOnSale && (
-              <Badge className="text-[10px] tracking-wider uppercase bg-destructive text-white">
+              <Badge className="text-[10px] tracking-wider uppercase bg-destructive text-white border-0">
                 -{discount}%
               </Badge>
             )}
           </div>
 
           {/* Wishlist button */}
-          <button
+          <motion.button
             onClick={handleWishlist}
-            className="absolute top-3 right-3 p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors"
+            className="absolute top-3 right-3 p-2 rounded-full glass-panel hover:bg-white transition-colors"
             aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+            whileTap={{ scale: 0.9 }}
           >
             <Heart
               className={cn(
@@ -132,13 +139,13 @@ export function ProductCard({
                 wishlisted ? "fill-destructive text-destructive" : "text-foreground"
               )}
             />
-          </button>
+          </motion.button>
 
           {/* Quick Add button */}
-          <div className="absolute bottom-0 left-0 right-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+          <div className="absolute bottom-0 left-0 right-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-[var(--ease-standard)]">
             <button
               onClick={handleQuickAdd}
-              className="w-full bg-foreground text-background py-3 text-xs font-medium tracking-wider uppercase hover:bg-foreground/90 transition-colors"
+              className="w-full bg-foreground/90 backdrop-blur-sm text-background py-3 text-xs font-medium tracking-wider uppercase hover:bg-foreground transition-colors"
             >
               Quick Add
             </button>
@@ -160,6 +167,6 @@ export function ProductCard({
           </div>
         </div>
       </Link>
-    </div>
+    </motion.div>
   );
 }

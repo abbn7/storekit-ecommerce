@@ -27,6 +27,11 @@ export async function GET(
     if (!order) {
       return apiError("Order not found", 404);
     }
+
+    if (sessionId && order.id !== id) {
+      return apiError("Order/session mismatch", 400);
+    }
+
     return apiResponse(order);
   } catch (error) {
     console.error("Error fetching order:", error);
