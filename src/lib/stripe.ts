@@ -1,6 +1,7 @@
 import Stripe from "stripe";
+import { env } from "@/lib/config";
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+export const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
   typescript: true,
 });
 
@@ -16,6 +17,7 @@ interface CheckoutLineItem {
     unit_amount: number;
   };
   quantity: number;
+  tax_rates?: string[];
 }
 
 export async function createCheckoutSession(params: {
@@ -34,10 +36,18 @@ export async function createCheckoutSession(params: {
   cancelUrl: string;
   shippingCost: number;
   taxRate: number;
+  currency: string;
+  taxRateId?: string;
 }) {
+  const currency = params.currency.toLowerCase();
+
+  // If a Stripe tax_rate ID is configured, apply it to line items
+  // Otherwise, fall back to adding tax as a line item
+  const useStripeTaxRate = !!params.taxRateId;
+
   const lineItems: CheckoutLineItem[] = params.items.map((item) => ({
     price_data: {
-      currency: "usd",
+      currency,
       product_data: {
         name: item.name,
         description: item.description,
@@ -50,13 +60,14 @@ export async function createCheckoutSession(params: {
       unit_amount: item.price,
     },
     quantity: item.quantity,
+    ...(useStripeTaxRate ? { tax_rates: [params.taxRateId!] } : {}),
   }));
 
   // Add shipping as a line item if > 0
   if (params.shippingCost > 0) {
     lineItems.push({
       price_data: {
-        currency: "usd",
+        currency,
         product_data: {
           name: "Shipping",
           description: "Standard shipping",
@@ -64,17 +75,18 @@ export async function createCheckoutSession(params: {
         unit_amount: params.shippingCost,
       },
       quantity: 1,
+      ...(useStripeTaxRate ? { tax_rates: [params.taxRateId!] } : {}),
     });
   }
 
-  // Add tax as a line item if > 0
-  if (params.taxRate > 0) {
+  // Fallback: Add tax as a line item only if no Stripe tax_rate is configured
+  if (!useStripeTaxRate && params.taxRate > 0) {
     const subtotal = params.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const taxAmount = Math.round(subtotal * params.taxRate);
     if (taxAmount > 0) {
       lineItems.push({
         price_data: {
-          currency: "usd",
+          currency,
           product_data: {
             name: "Tax",
             description: "Sales tax",
@@ -105,7 +117,7 @@ export function constructWebhookEvent(payload: string | Buffer, signature: strin
   return stripe.webhooks.constructEvent(
     payload,
     signature,
-    process.env.STRIPE_WEBHOOK_SECRET!
+    env.STRIPE_WEBHOOK_SECRET
   );
 }
 

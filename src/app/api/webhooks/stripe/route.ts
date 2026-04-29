@@ -4,6 +4,9 @@ import { getOrderByStripeSession, updateOrderStatus } from "@/lib/db/queries/ord
 import { getStoreConfig } from "@/lib/db/queries/store";
 import { sendEmail, generateOrderConfirmationHtml, generateOrderStatusUpdateHtml } from "@/lib/email";
 import { apiError } from "@/lib/api-response";
+import { db } from "@/lib/db";
+import { processedWebhookEvents, productVariants } from "@/lib/db/schema";
+import { eq, sql } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,13 +28,46 @@ export async function POST(request: NextRequest) {
       case "checkout.session.completed": {
         const session = event.data.object;
         const sessionId = session.id;
+        const eventId = event.id;
 
-        // Update order with stripe session ID and mark as processing
+        // C5+C6 FIX: Wrap everything in a transaction for atomicity
+        await db.transaction(async (tx) => {
+          // Atomic idempotency check: INSERT with ON CONFLICT DO NOTHING
+          // If the insert returns no rows, the event was already processed
+          const [inserted] = await tx
+            .insert(processedWebhookEvents)
+            .values({ eventId })
+            .onConflictDoNothing()
+            .returning({ eventId: processedWebhookEvents.eventId });
+
+          if (!inserted) {
+            // Event already processed — skip
+            return;
+          }
+
+          // Update order with stripe session ID and mark as processing
+          const order = await getOrderByStripeSession(sessionId);
+          if (order) {
+            await updateOrderStatus(order.id, "processing");
+
+            // Decrement stock for each order item that has a variant
+            // Guard against negative stock with WHERE stock >= quantity
+            for (const item of order.items) {
+              if (item.variantId) {
+                await tx
+                  .update(productVariants)
+                  .set({ stock: sql`${productVariants.stock} - ${item.quantity}` })
+                  .where(
+                    sql`${productVariants.id} = ${item.variantId} AND ${productVariants.stock} >= ${item.quantity}`
+                  );
+              }
+            }
+          }
+        });
+
+        // Send confirmation email outside the transaction (non-critical path)
         const order = await getOrderByStripeSession(sessionId);
         if (order) {
-          await updateOrderStatus(order.id, "processing");
-
-          // Send confirmation email
           try {
             const config = await getStoreConfig();
             const storeName = config?.name || "Store";

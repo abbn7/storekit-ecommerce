@@ -68,6 +68,8 @@ export function AddToCartSection({
     : 0;
 
   const handleAddToCart = () => {
+    // H4 FIX: Validate quantity doesn't exceed stock
+    if (quantity > activeMaxStock) return;
     addToCart({
       product_id: productId,
       product_name: productName,

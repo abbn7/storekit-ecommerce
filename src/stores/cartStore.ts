@@ -25,13 +25,16 @@ export const useCartStore = create<CartState>()(
 
         if (existingIndex > -1) {
           const updated = [...items];
+          // H3 FIX: Cap quantity at max_stock when adding to existing item
+          const newQuantity = updated[existingIndex].quantity + item.quantity;
           updated[existingIndex] = {
             ...updated[existingIndex],
-            quantity: updated[existingIndex].quantity + item.quantity,
+            quantity: Math.min(newQuantity, item.max_stock),
           };
           set({ items: updated });
         } else {
-          set({ items: [...items, item] });
+          // H3 FIX: Cap initial quantity at max_stock too
+          set({ items: [...items, { ...item, quantity: Math.min(item.quantity, item.max_stock) }] });
         }
       },
 
@@ -51,7 +54,7 @@ export const useCartStore = create<CartState>()(
         set({
           items: get().items.map((i) =>
             i.product_id === productId && i.variant_id === variantId
-              ? { ...i, quantity }
+              ? { ...i, quantity: Math.min(quantity, i.max_stock) }
               : i
           ),
         });

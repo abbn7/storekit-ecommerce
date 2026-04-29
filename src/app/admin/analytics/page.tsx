@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatPrice } from "@/lib/utils";
 
 interface AnalyticsData {
   stats: {
@@ -14,7 +15,7 @@ interface AnalyticsData {
     delivered_orders: number;
   };
   salesChart: { date: string; revenue: number; orders: number }[];
-  topProducts: { product_name: string; total_sold: number; revenue: number }[];
+  topProducts: { product_id: string; product_name: string; total_sold: number; revenue: number }[];
 }
 
 export default function AdminAnalyticsPage() {
@@ -28,6 +29,7 @@ export default function AdminAnalyticsPage() {
   }, []);
 
   const stats = data?.stats;
+  const maxRevenue = Math.max(...(data?.salesChart?.map((s) => s.revenue) || [1]), 1);
 
   return (
     <div className="space-y-6">
@@ -68,12 +70,28 @@ export default function AdminAnalyticsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-heading text-lg">Sales Overview</CardTitle>
+          <CardTitle className="font-heading text-lg">Sales Overview (Last 30 Days)</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Connect your database to see sales charts and trends here.
-          </p>
+          {data?.salesChart && data.salesChart.length > 0 ? (
+            <div className="space-y-2">
+              {data.salesChart.map((day) => (
+                <div key={day.date} className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground w-20 shrink-0">{day.date}</span>
+                  <div className="flex-1 h-6 bg-muted rounded overflow-hidden">
+                    <div
+                      className="h-full bg-accent/80 rounded transition-all"
+                      style={{ width: `${Math.max((day.revenue / maxRevenue) * 100, 1)}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-medium w-24 text-right">{formatPrice(day.revenue)}</span>
+                  <span className="text-xs text-muted-foreground w-12 text-right">{day.orders} ord.</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No sales data available yet.</p>
+          )}
         </CardContent>
       </Card>
 
@@ -82,9 +100,24 @@ export default function AdminAnalyticsPage() {
           <CardTitle className="font-heading text-lg">Top Products</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Connect your database to see top-selling products here.
-          </p>
+          {data?.topProducts && data.topProducts.length > 0 ? (
+            <div className="space-y-3">
+              {data.topProducts.map((product, i) => (
+                <div key={product.product_id ?? i} className="flex items-center justify-between py-2 border-b last:border-0">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-muted-foreground w-6">{i + 1}.</span>
+                    <span className="text-sm font-medium">{product.product_name}</span>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <span className="text-sm text-muted-foreground">{product.total_sold} sold</span>
+                    <span className="text-sm font-medium">{formatPrice(product.revenue)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No product sales data available yet.</p>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -3,15 +3,38 @@
 import Link from "next/link";
 import { FaInstagram, FaTwitter, FaFacebookF, FaPinterestP } from "react-icons/fa";
 import type { IconType } from "react-icons";
+import type { SocialLinks } from "@/types"; // M7 FIX: Import SocialLinks type
 
-const socialLinks: { icon: IconType; href: string; label: string }[] = [
+interface FooterProps {
+  socialLinks?: SocialLinks | null; // M7 FIX: Accept social links from store config
+}
+
+const defaultSocialLinks: { icon: IconType; href: string; label: string }[] = [
   { icon: FaInstagram, href: "https://instagram.com", label: "Instagram" },
   { icon: FaTwitter, href: "https://twitter.com", label: "Twitter" },
   { icon: FaFacebookF, href: "https://facebook.com", label: "Facebook" },
   { icon: FaPinterestP, href: "https://pinterest.com", label: "Pinterest" },
 ];
 
-export function Footer() {
+const iconMap: Record<string, IconType> = {
+  instagram: FaInstagram,
+  twitter: FaTwitter,
+  facebook: FaFacebookF,
+  pinterest: FaPinterestP,
+};
+
+export function Footer({ socialLinks }: FooterProps) {
+  // M7 FIX: Build social links from store config, fall back to defaults
+  const links = socialLinks
+    ? Object.entries(socialLinks)
+        .filter(([, url]) => url)
+        .map(([platform, url]) => ({
+          icon: iconMap[platform] ?? FaInstagram,
+          href: url!,
+          label: platform.charAt(0).toUpperCase() + platform.slice(1),
+        }))
+    : defaultSocialLinks;
+
   return (
     <footer className="bg-foreground text-background">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
@@ -32,13 +55,17 @@ export function Footer() {
               Shop
             </h3>
             <ul className="space-y-3">
-              {["All Collections", "New Arrivals", "Best Sellers", "Sale"].map((item) => (
-                <li key={item}>
+              {[
+                { name: "All Collections", href: "/collections" },
+                { name: "New Arrivals", href: "/collections?sort=newest" },
+                { name: "About", href: "/about" }, // L6 FIX: Add About page link
+              ].map((item) => (
+                <li key={item.name}>
                   <Link
-                    href="/collections"
+                    href={item.href}
                     className="text-sm text-background/60 hover:text-background transition-colors"
                   >
-                    {item}
+                    {item.name}
                   </Link>
                 </li>
               ))}
@@ -72,19 +99,10 @@ export function Footer() {
             <p className="text-sm text-background/60 mb-4">
               Subscribe for exclusive access to new collections and special offers.
             </p>
-            <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>
-              <input
-                type="email"
-                placeholder="Your email"
-                className="flex-1 bg-background/10 border border-background/20 px-4 py-2 text-sm text-background placeholder:text-background/40 focus:outline-none focus:border-background/50"
-              />
-              <button
-                type="submit"
-                className="bg-background text-foreground px-4 py-2 text-xs font-medium tracking-wider uppercase hover:bg-background/90 transition-colors"
-              >
-                Join
-              </button>
-            </form>
+            {/* M8 FIX: Add placeholder text indicating coming soon */}
+            <p className="text-xs text-background/40 italic">
+              Newsletter subscription coming soon.
+            </p>
           </div>
         </div>
 
@@ -94,12 +112,14 @@ export function Footer() {
             © {new Date().getFullYear()} MAISON. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
-            {socialLinks.map(({ icon: Icon, href, label }) => (
+            {links.map(({ icon: Icon, href, label }) => (
               <a
                 key={label}
                 href={href}
                 className="text-background/40 hover:text-background transition-colors"
                 aria-label={label}
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 <Icon className="h-4 w-4" />
               </a>

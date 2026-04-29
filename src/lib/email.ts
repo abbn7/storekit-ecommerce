@@ -3,8 +3,9 @@ import { render } from "@react-email/render";
 import { OrderConfirmation } from "@/emails/OrderConfirmation";
 import { OrderShipped } from "@/emails/OrderShipped";
 import { OrderDelivered } from "@/emails/OrderDelivered";
+import { env } from "@/lib/config";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(env.RESEND_API_KEY);
 
 interface SendEmailParams {
   to: string;
@@ -14,7 +15,7 @@ interface SendEmailParams {
 
 export async function sendEmail({ to, subject, html }: SendEmailParams) {
   const { data, error } = await resend.emails.send({
-    from: process.env.EMAIL_FROM || "noreply@store.com",
+    from: env.EMAIL_FROM,
     to,
     subject,
     html,

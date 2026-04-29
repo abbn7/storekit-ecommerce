@@ -3,6 +3,7 @@ import { verifyAdminSession } from "@/lib/admin-auth";
 import { updateAnnouncement, deleteAnnouncement } from "@/lib/db/queries/store";
 import { apiResponse, apiError } from "@/lib/api-response";
 import { updateAnnouncementSchema } from "@/lib/validations";
+import { formatZodError } from "@/lib/utils";
 
 export async function PATCH(
   request: NextRequest,
@@ -16,13 +17,10 @@ export async function PATCH(
     const body = await request.json();
     const parsed = updateAnnouncementSchema.safeParse(body);
     if (!parsed.success) {
-      const errors = parsed.error.flatten().fieldErrors;
-      const message = Object.entries(errors)
-        .map(([key, vals]) => `${key}: ${vals?.join(", ")}`)
-        .join("; ");
-      return apiError(`Validation error: ${message}`, 400);
+      return apiError(`Validation error: ${formatZodError(parsed.error)}`, 400);
     }
 
+    // H1 FIX: Check for null return
     const announcement = await updateAnnouncement(id, parsed.data);
     if (!announcement) return apiError("Announcement not found", 404);
     return apiResponse(announcement);
@@ -41,7 +39,9 @@ export async function DELETE(
     if (!isAuth) return apiError("Unauthorized", 401);
 
     const { id } = await params;
-    await deleteAnnouncement(id);
+    // H2 FIX: Check if deletion actually happened
+    const deleted = await deleteAnnouncement(id);
+    if (!deleted) return apiError("Announcement not found", 404);
     return apiResponse({ success: true });
   } catch (error) {
     console.error("Error deleting announcement:", error);

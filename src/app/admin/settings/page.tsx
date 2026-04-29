@@ -30,12 +30,12 @@ export default function AdminSettingsPage() {
           setConfig({
             name: d.name || "",
             description: d.description || "",
-            primaryColor: d.primary_color || "#000000",
-            accentColor: d.accent_color || "#C8A96E",
+            primaryColor: d.primaryColor || "#000000",
+            accentColor: d.accentColor || "#C8A96E",
             currency: d.currency || "USD",
-            freeShippingThreshold: String(d.free_shipping_threshold ? d.free_shipping_threshold / 100 : 200),
-            shippingCost: String(d.shipping_cost ? d.shipping_cost / 100 : 15),
-            taxRate: String(d.tax_rate || "0.0875"),
+            freeShippingThreshold: String(d.freeShippingThreshold ? d.freeShippingThreshold / 100 : 200),
+            shippingCost: String(d.shippingCost ? d.shippingCost / 100 : 15),
+            taxRate: String(d.taxRate || "0.0875"),
           });
         }
       })
@@ -54,12 +54,12 @@ export default function AdminSettingsPage() {
         body: JSON.stringify({
           name: config.name,
           description: config.description,
-          primary_color: config.primaryColor,
-          accent_color: config.accentColor,
+          primaryColor: config.primaryColor,
+          accentColor: config.accentColor,
           currency: config.currency,
-          free_shipping_threshold: Math.round(parseFloat(config.freeShippingThreshold) * 100),
-          shipping_cost: Math.round(parseFloat(config.shippingCost) * 100),
-          tax_rate: config.taxRate,
+          freeShippingThreshold: Math.round(parseFloat(config.freeShippingThreshold) * 100),
+          shippingCost: Math.round(parseFloat(config.shippingCost) * 100),
+          taxRate: config.taxRate,
         }),
       });
       setSaved(true);

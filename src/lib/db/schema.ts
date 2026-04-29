@@ -60,11 +60,11 @@ export const productImages = pgTable("product_images", {
   id: uuid("id").primaryKey().defaultRandom(),
   productId: uuid("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
   url: text("url").notNull(),
-  altText: varchar("alt_text", { length: 255 }),
+  altText: text("alt_text"),
   width: integer("width"),
   height: integer("height"),
-  sortOrder: integer("sort_order").notNull().default(0),
   isPrimary: boolean("is_primary").notNull().default(false),
+  sortOrder: integer("sort_order").notNull().default(0),
 }, (table) => [
   index("product_images_product_idx").on(table.productId),
 ]);
@@ -82,6 +82,13 @@ export const productVariants = pgTable("product_variants", {
   index("product_variants_product_idx").on(table.productId),
 ]);
 
+export const productCollections = pgTable("product_collections", {
+  productId: uuid("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  collectionId: uuid("collection_id").notNull().references(() => collections.id, { onDelete: "cascade" }),
+}, (table) => [
+  primaryKey({ columns: [table.productId, table.collectionId] }),
+]);
+
 // ─── Collections ──────────────────────────────────────
 export const collections = pgTable("collections", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -91,17 +98,11 @@ export const collections = pgTable("collections", {
   imageUrl: text("image_url"),
   sortOrder: integer("sort_order").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [
   index("collections_slug_idx").on(table.slug),
-]);
-
-export const productCollections = pgTable("product_collections", {
-  productId: uuid("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
-  collectionId: uuid("collection_id").notNull().references(() => collections.id, { onDelete: "cascade" }),
-}, (table) => [
-  primaryKey({ columns: [table.productId, table.collectionId] }),
-  index("product_collections_product_idx").on(table.productId),
-  index("product_collections_collection_idx").on(table.collectionId),
+  index("collections_active_idx").on(table.isActive),
 ]);
 
 // ─── Orders ───────────────────────────────────────────
@@ -175,4 +176,17 @@ export const testimonials = pgTable("testimonials", {
   rating: integer("rating").notNull().default(5),
   isActive: boolean("is_active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
+});
+
+// ─── Security ─────────────────────────────────────────
+export const loginAttempts = pgTable("login_attempts", {
+  ip: varchar("ip", { length: 45 }).primaryKey(),
+  count: integer("count").notNull().default(1),
+  lastAttempt: timestamp("last_attempt").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at").notNull().defaultNow(),
+});
+
+export const processedWebhookEvents = pgTable("processed_webhook_events", {
+  eventId: varchar("event_id", { length: 255 }).primaryKey(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });

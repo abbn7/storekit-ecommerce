@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 export default function NewProductPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -35,9 +37,45 @@ export default function NewProductPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (res.ok) {
-        router.push("/admin/products");
+
+      if (!res.ok) {
+        throw new Error("Failed to create product");
       }
+
+      const result = await res.json();
+      const productId = result.data?.id;
+
+      // Upload image if selected
+      if (productId && imageFile) {
+        setImageUploading(true);
+        const uploadForm = new FormData();
+        uploadForm.append("file", imageFile);
+        uploadForm.append("folder", "products");
+
+        const uploadRes = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: uploadForm,
+        });
+
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          if (uploadData.data?.url) {
+            await fetch(`/api/admin/products/${productId}/images`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                url: uploadData.data.url,
+                width: uploadData.data.width,
+                height: uploadData.data.height,
+                isPrimary: true,
+              }),
+            });
+          }
+        }
+        setImageUploading(false);
+      }
+
+      router.push("/admin/products");
     } catch (error) {
       console.error(error);
     } finally {
@@ -59,7 +97,7 @@ export default function NewProductPage() {
         </div>
         <div>
           <Label htmlFor="description">Description</Label>
-          <Textarea id="description" name="description" rows={4} />
+          <Textarea id="description" name="description" rows={4} required />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -75,9 +113,22 @@ export default function NewProductPage() {
           <Label htmlFor="sku">SKU</Label>
           <Input id="sku" name="sku" />
         </div>
+        <div>
+          <Label htmlFor="image">Product Image</Label>
+          <Input
+            id="image"
+            name="image"
+            type="file"
+            accept="image/*"
+            onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+          />
+          {imageFile && (
+            <p className="text-sm text-muted-foreground mt-1">{imageFile.name}</p>
+          )}
+        </div>
         <div className="flex gap-4">
-          <Button type="submit" disabled={loading}>
-            {loading ? "Creating..." : "Create Product"}
+          <Button type="submit" disabled={loading || imageUploading}>
+            {loading ? "Creating..." : imageUploading ? "Uploading image..." : "Create Product"}
           </Button>
           <Button type="button" variant="outline" onClick={() => router.back()}>
             Cancel

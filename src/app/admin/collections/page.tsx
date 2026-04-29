@@ -27,11 +27,15 @@ export default function AdminCollectionsPage() {
           </Link>
         </Button>
       </div>
-      <DataTable data={collections} columns={[
-        { key: "name", label: "Name" },
-        { key: "slug", label: "Slug" },
-        { key: "is_active", label: "Active" },
-      ]} />
+      <DataTable
+        data={collections}
+        columns={[
+          { key: "name", label: "Name" },
+          { key: "slug", label: "Slug" },
+          { key: "isActive", label: "Active" },
+        ]}
+        getRowHref={(row) => `/admin/collections/${row.id}/edit`}
+      />
     </div>
   );
 }

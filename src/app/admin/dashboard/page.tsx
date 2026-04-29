@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { DollarSign, ShoppingBag, Package, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatPrice } from "@/lib/utils";
 
 interface Stats {
   total_revenue: number;
@@ -35,7 +36,7 @@ export default function AdminDashboardPage() {
   const cards = [
     {
       title: "Total Revenue",
-      value: `$${(s.total_revenue / 100).toFixed(2)}`,
+      value: formatPrice(s.total_revenue),
       icon: DollarSign,
     },
     {

@@ -54,13 +54,16 @@ export async function createBanner(data: typeof banners.$inferInsert) {
   return banner;
 }
 
+// H1 FIX: Return null when banner not found
 export async function updateBanner(id: string, data: Partial<typeof banners.$inferInsert>) {
   const [banner] = await db.update(banners).set(data).where(eq(banners.id, id)).returning();
-  return banner;
+  return banner ?? null;
 }
 
+// H2 FIX: Return boolean indicating whether deletion actually happened
 export async function deleteBanner(id: string) {
-  await db.delete(banners).where(eq(banners.id, id));
+  const [deleted] = await db.delete(banners).where(eq(banners.id, id)).returning({ id: banners.id });
+  return !!deleted;
 }
 
 export async function getAnnouncements() {
@@ -85,13 +88,16 @@ export async function createAnnouncement(data: typeof announcements.$inferInsert
   return announcement;
 }
 
+// H1 FIX: Return null when announcement not found
 export async function updateAnnouncement(id: string, data: Partial<typeof announcements.$inferInsert>) {
   const [announcement] = await db.update(announcements).set(data).where(eq(announcements.id, id)).returning();
-  return announcement;
+  return announcement ?? null;
 }
 
+// H2 FIX: Return boolean indicating whether deletion actually happened
 export async function deleteAnnouncement(id: string) {
-  await db.delete(announcements).where(eq(announcements.id, id));
+  const [deleted] = await db.delete(announcements).where(eq(announcements.id, id)).returning({ id: announcements.id });
+  return !!deleted;
 }
 
 export async function getTestimonials() {
@@ -116,11 +122,14 @@ export async function createTestimonial(data: typeof testimonials.$inferInsert) 
   return testimonial;
 }
 
+// H1 FIX: Return null when testimonial not found
 export async function updateTestimonial(id: string, data: Partial<typeof testimonials.$inferInsert>) {
   const [testimonial] = await db.update(testimonials).set(data).where(eq(testimonials.id, id)).returning();
-  return testimonial;
+  return testimonial ?? null;
 }
 
+// H2 FIX: Return boolean indicating whether deletion actually happened
 export async function deleteTestimonial(id: string) {
-  await db.delete(testimonials).where(eq(testimonials.id, id));
+  const [deleted] = await db.delete(testimonials).where(eq(testimonials.id, id)).returning({ id: testimonials.id });
+  return !!deleted;
 }

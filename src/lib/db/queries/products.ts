@@ -3,12 +3,12 @@ import { db } from "@/lib/db";
 import { products, productImages, productVariants, productCollections, collections } from "@/lib/db/schema";
 import type { ProductFilters } from "@/types";
 
-export async function getProducts(filters?: ProductFilters) {
+export async function getProducts(filters?: ProductFilters & { includeInactive?: boolean }) {
   const page = filters?.page ?? 1;
   const limit = filters?.limit ?? 12;
   const offset = (page - 1) * limit;
 
-  const conditions = [eq(products.isActive, true)];
+  const conditions = filters?.includeInactive ? [] : [eq(products.isActive, true)];
 
   if (filters?.collection) {
     const collectionCond = eq(collections.slug, filters.collection);
@@ -42,7 +42,39 @@ export async function getProducts(filters?: ProductFilters) {
       .limit(limit)
       .offset(offset);
 
-    return result;
+    // C3 FIX: Batch-fetch images for products returned by collection filter
+    const productIds = result.map((p) => p.id);
+    if (productIds.length > 0) {
+      const allImages = await db
+        .select({
+          productId: productImages.productId,
+          id: productImages.id,
+          url: productImages.url,
+          altText: productImages.altText,
+          width: productImages.width,
+          height: productImages.height,
+          isPrimary: productImages.isPrimary,
+          sortOrder: productImages.sortOrder,
+        })
+        .from(productImages)
+        .where(inArray(productImages.productId, productIds))
+        .orderBy(productImages.sortOrder);
+
+      const imagesByProductId = new Map<string, typeof allImages>();
+      for (const img of allImages) {
+        const existing = imagesByProductId.get(img.productId) ?? [];
+        existing.push(img);
+        imagesByProductId.set(img.productId, existing);
+      }
+
+      return result.map((product) => ({
+        ...product,
+        images: imagesByProductId.get(product.id) ?? [],
+        variants: [],
+      }));
+    }
+
+    return result.map((product) => ({ ...product, images: [], variants: [] }));
   }
 
   if (filters?.is_featured) conditions.push(eq(products.isFeatured, true));
@@ -85,53 +117,41 @@ export async function getProducts(filters?: ProductFilters) {
 }
 
 export async function getProductBySlug(slug: string) {
-  const [product] = await db
-    .select()
-    .from(products)
-    .where(and(eq(products.slug, slug), eq(products.isActive, true)))
-    .limit(1);
-
+  const [product] = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
   if (!product) return null;
 
-  const images = await db
-    .select()
-    .from(productImages)
-    .where(eq(productImages.productId, product.id))
-    .orderBy(asc(productImages.sortOrder));
+  // M2 FIX: Use Promise.all for parallel DB queries
+  const [images, variants] = await Promise.all([
+    db
+      .select()
+      .from(productImages)
+      .where(eq(productImages.productId, product.id))
+      .orderBy(productImages.sortOrder),
+    db
+      .select()
+      .from(productVariants)
+      .where(eq(productVariants.productId, product.id)),
+  ]);
 
-  const variants = await db
-    .select()
-    .from(productVariants)
-    .where(and(eq(productVariants.productId, product.id), eq(productVariants.isActive, true)));
-
-  const productCollectionsList = await db
-    .select({ id: collections.id, name: collections.name, slug: collections.slug })
-    .from(collections)
-    .innerJoin(productCollections, eq(collections.id, productCollections.collectionId))
-    .where(eq(productCollections.productId, product.id));
-
-  return {
-    ...product,
-    images,
-    variants,
-    collections: productCollectionsList,
-  };
+  return { ...product, images, variants };
 }
 
 export async function getProductById(id: string) {
   const [product] = await db.select().from(products).where(eq(products.id, id)).limit(1);
   if (!product) return null;
 
-  const images = await db
-    .select()
-    .from(productImages)
-    .where(eq(productImages.productId, id))
-    .orderBy(asc(productImages.sortOrder));
-
-  const variants = await db
-    .select()
-    .from(productVariants)
-    .where(eq(productVariants.productId, id));
+  // M2 FIX: Use Promise.all for parallel DB queries
+  const [images, variants] = await Promise.all([
+    db
+      .select()
+      .from(productImages)
+      .where(eq(productImages.productId, id))
+      .orderBy(productImages.sortOrder),
+    db
+      .select()
+      .from(productVariants)
+      .where(eq(productVariants.productId, id)),
+  ]);
 
   return { ...product, images, variants };
 }
@@ -154,10 +174,22 @@ export async function getNewArrivals(limit: number = 8) {
     .limit(limit);
 }
 
+// C4 FIX: Added collection filter support to getProductsCount
 export async function getProductsCount(filters?: ProductFilters) {
   const conditions = [eq(products.isActive, true)];
   if (filters?.is_featured) conditions.push(eq(products.isFeatured, true));
   if (filters?.is_new) conditions.push(eq(products.isNew, true));
+
+  if (filters?.collection) {
+    const [result] = await db
+      .select({ count: count() })
+      .from(products)
+      .innerJoin(productCollections, eq(products.id, productCollections.productId))
+      .innerJoin(collections, eq(productCollections.collectionId, collections.id))
+      .where(and(...conditions, eq(collections.slug, filters.collection)));
+
+    return result?.count ?? 0;
+  }
 
   const [result] = await db
     .select({ count: count() })
@@ -167,22 +199,35 @@ export async function getProductsCount(filters?: ProductFilters) {
   return result?.count ?? 0;
 }
 
+export async function getAllActiveProducts() {
+  return db
+    .select({
+      slug: products.slug,
+      updatedAt: products.updatedAt,
+    })
+    .from(products)
+    .where(eq(products.isActive, true));
+}
+
 export async function createProduct(data: typeof products.$inferInsert) {
   const [product] = await db.insert(products).values(data).returning();
   return product;
 }
 
+// H1 FIX: Return null when product not found instead of undefined
 export async function updateProduct(id: string, data: Partial<typeof products.$inferInsert>) {
   const [product] = await db
     .update(products)
     .set({ ...data, updatedAt: new Date() })
     .where(eq(products.id, id))
     .returning();
-  return product;
+  return product ?? null;
 }
 
+// H2 FIX: Return boolean indicating whether deletion actually happened
 export async function deleteProduct(id: string) {
-  await db.delete(products).where(eq(products.id, id));
+  const [deleted] = await db.delete(products).where(eq(products.id, id)).returning({ id: products.id });
+  return !!deleted;
 }
 
 export async function addProductImage(data: typeof productImages.$inferInsert) {

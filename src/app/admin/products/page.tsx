@@ -4,10 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatPrice } from "@/lib/utils";
 import { DataTable } from "./DataTable";
+import type { ProductMinimal } from "@/types"; // L3 FIX: Proper typing
 
 export default function AdminProductsPage() {
-  const [products, setProducts] = useState([]);
+  // L3 FIX: Properly type the products state
+  const [products, setProducts] = useState<ProductMinimal[]>([]);
 
   useEffect(() => {
     fetch("/api/admin/products")
@@ -27,11 +30,19 @@ export default function AdminProductsPage() {
           </Link>
         </Button>
       </div>
-      <DataTable data={products} columns={[
-        { key: "name", label: "Name" },
-        { key: "price", label: "Price" },
-        { key: "is_active", label: "Active" },
-      ]} />
+      <DataTable
+        data={products}
+        columns={[
+          { key: "name", label: "Name" },
+          {
+            key: "price",
+            label: "Price",
+            render: (row) => formatPrice(row.price as number),
+          },
+          { key: "isActive", label: "Active" },
+        ]}
+        getRowHref={(row) => `/admin/products/${row.id}/edit`}
+      />
     </div>
   );
 }

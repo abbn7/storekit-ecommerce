@@ -5,10 +5,31 @@ import { ProductImageGallery } from "./ProductImageGallery";
 import { AddToCartSection } from "./AddToCartSection";
 import { notFound } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Product",
-  description: "Product details",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const product = await getProductBySlug(id);
+
+  if (!product) {
+    return {
+      title: "Product Not Found",
+      description: "The product you are looking for does not exist.",
+    };
+  }
+
+  return {
+    title: product.metaTitle || product.name,
+    description: product.metaDescription || product.shortDescription || product.description.slice(0, 160),
+    openGraph: {
+      title: product.name,
+      description: product.metaDescription || product.shortDescription || product.description.slice(0, 160),
+      images: product.images.length > 0 ? [product.images[0].url] : [],
+    },
+  };
+}
 
 export default async function ProductDetailPage({
   params,
@@ -26,10 +47,10 @@ export default async function ProductDetailPage({
   // Compute total stock from variants, or default to 99 if no variants
   const totalStock =
     product.variants.length > 0
-      ? product.variants.reduce((sum, v) => sum + v.stock, 0)
+      ? product.variants.reduce((sum: number, v: { stock: number }) => sum + v.stock, 0)
       : 99;
 
-  const primaryImage = product.images.find((img) => img.isPrimary)?.url ?? product.images[0]?.url ?? "";
+  const primaryImage = product.images.find((img: { isPrimary: boolean }) => img.isPrimary)?.url ?? product.images[0]?.url ?? "";
 
   return (
     <div className="pt-24 pb-16">
@@ -45,7 +66,7 @@ export default async function ProductDetailPage({
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
           {/* Image Gallery */}
-          <ProductImageGallery images={product.images.map((img) => ({ url: img.url, altText: img.altText }))} />
+          <ProductImageGallery images={product.images.map((img: { url: string; altText: string | null }) => ({ url: img.url, altText: img.altText }))} />
 
           {/* Product Info */}
           <AddToCartSection
@@ -59,7 +80,7 @@ export default async function ProductDetailPage({
             careInstructions={product.careInstructions}
             imageUrl={primaryImage}
             maxStock={totalStock}
-            variants={product.variants.map((v) => ({
+            variants={product.variants.map((v: { id: string; name: string; price: number; compareAtPrice: number | null; stock: number; isActive: boolean }) => ({
               id: v.id,
               name: v.name,
               price: v.price,

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Minus, Plus, X, ShoppingBag } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 import { useUIStore } from "@/stores/uiStore";
+import { useStoreConfig } from "@/hooks/useStoreConfig"; // M10 FIX: Use cached hook
 import { formatPrice, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -15,18 +16,10 @@ export function CartDrawer() {
   const { items, removeItem, updateQuantity, getSubtotal, getItemCount } = useCartStore();
   const subtotal = getSubtotal();
   const itemCount = getItemCount();
-  const [freeShippingThreshold, setFreeShippingThreshold] = useState<number>(20000);
+  // M10 FIX: Use useStoreConfig hook with TTL caching instead of raw fetch
+  const { config } = useStoreConfig();
+  const freeShippingThreshold = config?.free_shipping_threshold ?? 20000;
 
-  useEffect(() => {
-    fetch("/api/store-config")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.data?.free_shipping_threshold != null) {
-          setFreeShippingThreshold(data.data.free_shipping_threshold);
-        }
-      })
-      .catch(() => {});
-  }, []);
   const freeShippingRemaining = freeShippingThreshold - subtotal;
 
   return (
@@ -117,8 +110,13 @@ export function CartDrawer() {
                       </button>
                       <span className="text-sm w-6 text-center">{item.quantity}</span>
                       <button
-                        onClick={() => updateQuantity(item.product_id, item.variant_id, item.quantity + 1)}
-                        className="p-1 hover:bg-muted rounded"
+                        onClick={() => {
+                          if (item.quantity < item.max_stock) {
+                            updateQuantity(item.product_id, item.variant_id, item.quantity + 1);
+                          }
+                        }}
+                        disabled={item.quantity >= item.max_stock}
+                        className="p-1 hover:bg-muted rounded disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Plus className="h-3 w-3" />
                       </button>

@@ -1,15 +1,15 @@
 import { cookies } from "next/headers";
+import { db } from "@/lib/db";
+import { loginAttempts } from "@/lib/db/schema";
+import { eq, sql } from "drizzle-orm";
 
 const ADMIN_COOKIE_NAME = "admin_token";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
-// In-memory rate limiting for login attempts
-const loginAttempts = new Map<string, { count: number; lastAttempt: number }>();
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 60 * 1000; // 1 minute
 
 function getHmacSecret(): string {
-  // Use ADMIN_SECRET if available, otherwise derive from ADMIN_PASSWORD
   return process.env.ADMIN_SECRET || process.env.ADMIN_PASSWORD || "fallback-secret-change-me";
 }
 
@@ -24,16 +24,9 @@ async function createToken(password: string): Promise<string> {
     ["sign"]
   );
   const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(password));
-  const hmacHex = Array.from(new Uint8Array(signature))
+  return Array.from(new Uint8Array(signature))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-  // Prepend a random nonce for additional entropy
-  const nonceArray = new Uint8Array(16);
-  crypto.getRandomValues(nonceArray);
-  const nonce = Array.from(nonceArray)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  return `${nonce}:${hmacHex}`;
 }
 
 async function verifyToken(token: string): Promise<boolean> {
@@ -41,10 +34,6 @@ async function verifyToken(token: string): Promise<boolean> {
   if (!adminPassword) return false;
 
   try {
-    const parts = token.split(":");
-    if (parts.length !== 2) return false;
-
-    const [, providedHmac] = parts;
     const secret = getHmacSecret();
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
@@ -59,14 +48,12 @@ async function verifyToken(token: string): Promise<boolean> {
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
 
-    // Constant-time comparison to prevent timing attacks
-    return timingSafeEqual(providedHmac, expectedHmac);
+    return timingSafeEqual(token, expectedHmac);
   } catch {
     return false;
   }
 }
 
-// Constant-time string comparison
 function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let result = 0;
@@ -76,22 +63,41 @@ function timingSafeEqual(a: string, b: string): boolean {
   return result === 0;
 }
 
-export function checkRateLimit(ip: string): { allowed: boolean; remainingMs: number } {
-  const now = Date.now();
-  const record = loginAttempts.get(ip);
+export async function checkRateLimit(ip: string): Promise<{ allowed: boolean; remainingMs: number }> {
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + WINDOW_MS);
 
-  if (!record || now - record.lastAttempt > WINDOW_MS) {
-    loginAttempts.set(ip, { count: 1, lastAttempt: now });
+  const [record] = await db
+    .select()
+    .from(loginAttempts)
+    .where(eq(loginAttempts.ip, ip))
+    .limit(1);
+
+  if (!record || record.expiresAt < now) {
+    // Reset or create new record
+    await db
+      .insert(loginAttempts)
+      .values({ ip, count: 1, lastAttempt: now, expiresAt })
+      .onConflictDoUpdate({
+        target: loginAttempts.ip,
+        set: { count: 1, lastAttempt: now, expiresAt },
+      });
     return { allowed: true, remainingMs: 0 };
   }
 
   if (record.count >= MAX_ATTEMPTS) {
-    const remainingMs = WINDOW_MS - (now - record.lastAttempt);
-    return { allowed: false, remainingMs };
+    const remainingMs = record.expiresAt.getTime() - now.getTime();
+    return { allowed: false, remainingMs: Math.max(0, remainingMs) };
   }
 
-  record.count++;
-  record.lastAttempt = now;
+  await db
+    .update(loginAttempts)
+    .set({
+      count: sql`${loginAttempts.count} + 1`,
+      lastAttempt: now,
+    })
+    .where(eq(loginAttempts.ip, ip));
+
   return { allowed: true, remainingMs: 0 };
 }
 
@@ -106,7 +112,6 @@ export async function loginAdmin(password: string): Promise<{ success: boolean; 
     return { success: false, error: "Invalid password" };
   }
 
-  // Create HMAC-based token (password is NOT stored in the cookie)
   const token = await createToken(password);
 
   const cookieStore = await cookies();

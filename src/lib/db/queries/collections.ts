@@ -14,6 +14,16 @@ export async function getAllCollections() {
   return db.select().from(collections).orderBy(asc(collections.sortOrder));
 }
 
+export async function getAllActiveCollections() {
+  return db
+    .select({
+      slug: collections.slug,
+      updatedAt: collections.updatedAt,
+    })
+    .from(collections)
+    .where(eq(collections.isActive, true));
+}
+
 export async function getCollectionBySlug(slug: string) {
   const [collection] = await db
     .select()
@@ -82,17 +92,20 @@ export async function createCollection(data: typeof collections.$inferInsert) {
   return collection;
 }
 
+// H1 FIX: Return null when collection not found instead of undefined
 export async function updateCollection(id: string, data: Partial<typeof collections.$inferInsert>) {
   const [collection] = await db
     .update(collections)
     .set(data)
     .where(eq(collections.id, id))
     .returning();
-  return collection;
+  return collection ?? null;
 }
 
+// H2 FIX: Return boolean indicating whether deletion actually happened
 export async function deleteCollection(id: string) {
-  await db.delete(collections).where(eq(collections.id, id));
+  const [deleted] = await db.delete(collections).where(eq(collections.id, id)).returning({ id: collections.id });
+  return !!deleted;
 }
 
 export async function addProductToCollection(productId: string, collectionId: string) {

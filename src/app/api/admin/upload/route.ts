@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
-import { uploadImage } from "@/lib/cloudinary";
 import { verifyAdminSession } from "@/lib/admin-auth";
+import { uploadImage } from "@/lib/cloudinary";
 import { apiResponse, apiError } from "@/lib/api-response";
 import { MAX_UPLOAD_SIZE, ALLOWED_MIME_TYPES } from "@/lib/validations";
 
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       return apiError("No file provided", 400);
     }
 
-    // Fix #10: Validate file size (5MB max)
+    // Validate file size (5MB max)
     if (file.size > MAX_UPLOAD_SIZE) {
       return apiError(`File too large. Maximum size is ${MAX_UPLOAD_SIZE / 1024 / 1024}MB`, 400);
     }

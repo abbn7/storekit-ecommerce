@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { createOrder, createOrderItem } from "@/lib/db/queries/orders";
+import { createOrder, createOrderItem, deleteOrder } from "@/lib/db/queries/orders";
 import { getProductById } from "@/lib/db/queries/products";
 import { getStoreConfig } from "@/lib/db/queries/store";
 import { createCheckoutSession, calculateOrderAmount } from "@/lib/stripe";
@@ -8,8 +8,9 @@ import { db } from "@/lib/db";
 import { orders, orderItems } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { formatZodError } from "@/lib/utils";
 
-// Zod schema for order creation (Fix #6)
+// Zod schema for order creation
 const orderItemSchema = z.object({
   productId: z.string().uuid(),
   variantId: z.string().uuid().optional(),
@@ -33,7 +34,7 @@ const createOrderSchema = z.object({
   lastName: z.string().min(1).max(255),
   phone: z.string().max(50).optional(),
   address: addressSchema,
-  clerkUserId: z.string().optional(),
+  clerkUserId: z.string().optional(), // C2 FIX: Accept clerk user ID
 });
 
 export async function POST(request: NextRequest) {
@@ -43,11 +44,7 @@ export async function POST(request: NextRequest) {
     // Validate input with Zod
     const parsed = createOrderSchema.safeParse(body);
     if (!parsed.success) {
-      const errors = parsed.error.flatten().fieldErrors;
-      const message = Object.entries(errors)
-        .map(([key, vals]) => `${key}: ${vals?.join(", ")}`)
-        .join("; ");
-      return apiError(`Validation error: ${message}`, 400);
+      return apiError(`Validation error: ${formatZodError(parsed.error)}`, 400);
     }
 
     const { items, email, firstName, lastName, phone, address, clerkUserId } = parsed.data;
@@ -138,7 +135,7 @@ export async function POST(request: NextRequest) {
           tax,
           total: finalTotal,
           stripeSessionId: null,
-          clerkUserId: clerkUserId || null,
+          clerkUserId: clerkUserId || null, // C2 FIX: Link order to Clerk user
         })
         .returning();
 
@@ -156,27 +153,39 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      // NOTE: Stock is NOT decremented here — it's decremented in the Stripe webhook
+      // when payment is confirmed. This prevents stock issues if payment fails.
+
       return created;
     });
 
-    // Create Stripe checkout session with server-verified prices
-    const session = await createCheckoutSession({
-      items: dbItems.map((item) => ({
-        name: item.name,
-        description: item.variantName || undefined,
-        images: item.images.slice(0, 1),
-        price: item.price, // Server-verified price
-        quantity: item.quantity,
-        productId: item.productId,
-        variantId: item.variantId,
-      })),
-      email,
-      orderId: order.id,
-      successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/order-confirmation?session_id={CHECKOUT_SESSION_ID}`,
-      cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/cart`,
-      shippingCost: finalShipping,
-      taxRate,
-    });
+    // H5 FIX: Handle Stripe session creation failure — clean up orphaned order
+    let session;
+    try {
+      session = await createCheckoutSession({
+        items: dbItems.map((item) => ({
+          name: item.name,
+          description: item.variantName || undefined,
+          images: item.images.slice(0, 1),
+          price: item.price,
+          quantity: item.quantity,
+          productId: item.productId,
+          variantId: item.variantId,
+        })),
+        email,
+        orderId: order.id,
+        successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/order-confirmation?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/cart`,
+        shippingCost: finalShipping,
+        taxRate,
+        currency: config?.currency ?? "USD",
+      });
+    } catch (stripeError) {
+      // Stripe session creation failed — delete the orphaned order
+      console.error("Stripe session creation failed, cleaning up order:", stripeError);
+      await deleteOrder(order.id);
+      return apiError("Failed to create payment session. Please try again.", 500);
+    }
 
     // Save the Stripe session ID so the webhook can match the order
     await db

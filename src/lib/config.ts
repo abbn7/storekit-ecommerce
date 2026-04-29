@@ -29,8 +29,8 @@ const envSchema = z.object({
   EMAIL_FROM: z.string().email().default("noreply@store.com"),
 
   // Admin
-  ADMIN_PASSWORD: z.string().min(12, "Admin password must be at least 12 characters"),
-  ADMIN_SECRET: z.string().min(16).optional(),
+  ADMIN_PASSWORD: z.string().min(8, "Admin password must be at least 8 characters"),
+  ADMIN_SECRET: z.string().min(8).optional(),
 
   // App
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),

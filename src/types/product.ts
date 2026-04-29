@@ -3,8 +3,8 @@ export interface ProductImage {
   product_id: string;
   url: string;
   alt_text: string;
-  width: number;
-  height: number;
+  width: number | null;
+  height: number | null;
   sort_order: number;
   is_primary: boolean;
 }
@@ -13,7 +13,7 @@ export interface ProductVariant {
   id: string;
   product_id: string;
   name: string;
-  sku: string;
+  sku: string | null;
   price: number;
   compare_at_price: number | null;
   stock: number;

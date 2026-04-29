@@ -3,6 +3,7 @@ import { verifyAdminSession } from "@/lib/admin-auth";
 import { getProducts, createProduct } from "@/lib/db/queries/products";
 import { apiResponse, apiError } from "@/lib/api-response";
 import { createProductSchema } from "@/lib/validations";
+import { formatZodError } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
     const limit = Number(searchParams.get("limit")) || 20;
     const search = searchParams.get("search") || undefined;
 
-    const products = await getProducts({ page, limit, search });
+    const products = await getProducts({ page, limit, search, includeInactive: true });
     return apiResponse(products);
   } catch (error) {
     console.error("Error fetching products:", error);
@@ -30,11 +31,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const parsed = createProductSchema.safeParse(body);
     if (!parsed.success) {
-      const errors = parsed.error.flatten().fieldErrors;
-      const message = Object.entries(errors)
-        .map(([key, vals]) => `${key}: ${vals?.join(", ")}`)
-        .join("; ");
-      return apiError(`Validation error: ${message}`, 400);
+      return apiError(`Validation error: ${formatZodError(parsed.error)}`, 400);
     }
 
     const product = await createProduct(parsed.data);

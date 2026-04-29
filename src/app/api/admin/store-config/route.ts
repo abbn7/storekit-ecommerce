@@ -3,6 +3,7 @@ import { verifyAdminSession } from "@/lib/admin-auth";
 import { getStoreConfig, updateStoreConfig } from "@/lib/db/queries/store";
 import { apiResponse, apiError } from "@/lib/api-response";
 import { updateStoreConfigSchema } from "@/lib/validations";
+import { formatZodError } from "@/lib/utils";
 
 export async function GET() {
   try {
@@ -26,11 +27,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const parsed = updateStoreConfigSchema.safeParse(body);
     if (!parsed.success) {
-      const errors = parsed.error.flatten().fieldErrors;
-      const message = Object.entries(errors)
-        .map(([key, vals]) => `${key}: ${vals?.join(", ")}`)
-        .join("; ");
-      return apiError(`Validation error: ${message}`, 400);
+      return apiError(`Validation error: ${formatZodError(parsed.error)}`, 400);
     }
     const config = await updateStoreConfig(parsed.data);
     return apiResponse(config);

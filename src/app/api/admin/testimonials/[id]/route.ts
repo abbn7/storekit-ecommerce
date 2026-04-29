@@ -3,6 +3,7 @@ import { verifyAdminSession } from "@/lib/admin-auth";
 import { updateTestimonial, deleteTestimonial } from "@/lib/db/queries/store";
 import { apiResponse, apiError } from "@/lib/api-response";
 import { updateTestimonialSchema } from "@/lib/validations";
+import { formatZodError } from "@/lib/utils";
 
 export async function PATCH(
   request: NextRequest,
@@ -16,13 +17,10 @@ export async function PATCH(
     const body = await request.json();
     const parsed = updateTestimonialSchema.safeParse(body);
     if (!parsed.success) {
-      const errors = parsed.error.flatten().fieldErrors;
-      const message = Object.entries(errors)
-        .map(([key, vals]) => `${key}: ${vals?.join(", ")}`)
-        .join("; ");
-      return apiError(`Validation error: ${message}`, 400);
+      return apiError(`Validation error: ${formatZodError(parsed.error)}`, 400);
     }
 
+    // H1 FIX: Check for null return
     const testimonial = await updateTestimonial(id, parsed.data);
     if (!testimonial) return apiError("Testimonial not found", 404);
     return apiResponse(testimonial);
@@ -41,7 +39,9 @@ export async function DELETE(
     if (!isAuth) return apiError("Unauthorized", 401);
 
     const { id } = await params;
-    await deleteTestimonial(id);
+    // H2 FIX: Check if deletion actually happened
+    const deleted = await deleteTestimonial(id);
+    if (!deleted) return apiError("Testimonial not found", 404);
     return apiResponse({ success: true });
   } catch (error) {
     console.error("Error deleting testimonial:", error);

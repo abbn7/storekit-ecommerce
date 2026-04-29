@@ -55,7 +55,7 @@ export function ProductCard({
       compare_at_price: compareAtPrice,
       quantity: 1,
       image_url: primaryImage || "",
-      max_stock: stock ?? 99,
+      max_stock: stock ?? 10, // L8 FIX: Default to 10 instead of 99 to prevent over-ordering
     });
     openCart();
   };

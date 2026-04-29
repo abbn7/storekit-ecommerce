@@ -5,10 +5,20 @@ import { useSearchParams } from "next/navigation";
 import { ProductGrid } from "@/components/store/ProductGrid";
 import { Search } from "lucide-react";
 
+interface SearchResult {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  compareAtPrice: number | null;
+  images: { url: string; alt_text: string | null; is_primary: boolean }[];
+}
+
 function SearchResults() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
-  const [results, setResults] = useState([]);
+  // L4 FIX: Properly type the results state
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {

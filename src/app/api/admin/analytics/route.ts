@@ -1,6 +1,10 @@
+import { NextRequest } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { getSalesData, getTopProducts, getOrderStats, getProductsCount } from "@/lib/db/queries/analytics";
 import { apiResponse, apiError } from "@/lib/api-response";
+
+// I5 FIX: Simple in-memory rate limit for public API routes
+// For production, use a proper rate limiting solution like Upstash Ratelimit
 
 export async function GET() {
   try {

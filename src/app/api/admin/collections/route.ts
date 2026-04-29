@@ -3,6 +3,7 @@ import { verifyAdminSession } from "@/lib/admin-auth";
 import { getAllCollections, createCollection } from "@/lib/db/queries/collections";
 import { apiResponse, apiError } from "@/lib/api-response";
 import { createCollectionSchema } from "@/lib/validations";
+import { formatZodError } from "@/lib/utils";
 
 export async function GET() {
   try {
@@ -25,11 +26,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const parsed = createCollectionSchema.safeParse(body);
     if (!parsed.success) {
-      const errors = parsed.error.flatten().fieldErrors;
-      const message = Object.entries(errors)
-        .map(([key, vals]) => `${key}: ${vals?.join(", ")}`)
-        .join("; ");
-      return apiError(`Validation error: ${message}`, 400);
+      return apiError(`Validation error: ${formatZodError(parsed.error)}`, 400);
     }
 
     const collection = await createCollection(parsed.data);

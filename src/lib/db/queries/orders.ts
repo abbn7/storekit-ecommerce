@@ -66,13 +66,14 @@ export async function createOrderItem(data: typeof orderItems.$inferInsert) {
   return item;
 }
 
+// H1 FIX: Return null when order not found instead of undefined
 export async function updateOrderStatus(id: string, status: string) {
   const [order] = await db
     .update(orders)
     .set({ status, updatedAt: new Date() })
     .where(eq(orders.id, id))
     .returning();
-  return order;
+  return order ?? null;
 }
 
 export async function getOrdersCount() {
@@ -86,4 +87,9 @@ export async function getTotalRevenue() {
     .from(orders)
     .where(eq(orders.status, "delivered"));
   return result?.total ?? 0;
+}
+
+// H5 FIX: Delete an order (used to clean up orphaned orders when Stripe session creation fails)
+export async function deleteOrder(id: string) {
+  await db.delete(orders).where(eq(orders.id, id));
 }

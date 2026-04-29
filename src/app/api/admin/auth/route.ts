@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { loginAdmin, logoutAdmin, checkRateLimit } from "@/lib/admin-auth";
 import { apiResponse, apiError } from "@/lib/api-response";
 import { z } from "zod";
+import { formatZodError } from "@/lib/utils";
 
 const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
       || request.headers.get("x-real-ip")
       || "unknown";
-    const rateCheck = checkRateLimit(ip);
+    const rateCheck = await checkRateLimit(ip);
     if (!rateCheck.allowed) {
       return apiError(
         `Too many login attempts. Try again in ${Math.ceil(rateCheck.remainingMs / 1000)} seconds.`,
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const parsed = loginSchema.safeParse(body);
     if (!parsed.success) {
-      return apiError("Password is required", 400);
+      return apiError(`Validation error: ${formatZodError(parsed.error)}`, 400);
     }
 
     const result = await loginAdmin(parsed.data.password);

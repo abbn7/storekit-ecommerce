@@ -5,6 +5,7 @@ import { getStoreConfig } from "@/lib/db/queries/store";
 import { sendEmail, generateOrderStatusUpdateHtml } from "@/lib/email";
 import { apiResponse, apiError } from "@/lib/api-response";
 import { updateOrderStatusSchema } from "@/lib/validations";
+import { formatZodError } from "@/lib/utils";
 
 export async function GET(
   request: NextRequest,
@@ -36,14 +37,11 @@ export async function PATCH(
     const body = await request.json();
     const parsed = updateOrderStatusSchema.safeParse(body);
     if (!parsed.success) {
-      const errors = parsed.error.flatten().fieldErrors;
-      const message = Object.entries(errors)
-        .map(([key, vals]) => `${key}: ${vals?.join(", ")}`)
-        .join("; ");
-      return apiError(`Validation error: ${message}`, 400);
+      return apiError(`Validation error: ${formatZodError(parsed.error)}`, 400);
     }
     const { status } = parsed.data;
 
+    // H1 FIX: Check for null return (order not found)
     const order = await updateOrderStatus(id, status);
     if (!order) return apiError("Order not found", 404);
 

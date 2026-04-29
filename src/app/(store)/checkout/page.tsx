@@ -2,19 +2,33 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs"; // C2 FIX: Import useAuth
 import { useCartStore } from "@/stores/cartStore";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, COUNTRY_NAMES } from "@/lib/utils"; // H7 FIX: Import COUNTRY_NAMES
+import { useStoreConfig } from "@/hooks/useStoreConfig"; // H6 FIX: Use store config for estimated totals
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+const COUNTRIES = Object.entries(COUNTRY_NAMES).map(([code, name]) => ({ code, name }));
+
 export default function CheckoutPage() {
   const router = useRouter();
+  const { userId } = useAuth(); // C2 FIX: Get Clerk user ID
   const { items, getSubtotal, getItemCount, clearCart } = useCartStore();
+  const { config } = useStoreConfig(); // H6 FIX: Fetch store config for estimates
   const subtotal = getSubtotal();
   const itemCount = getItemCount();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // H6 FIX: Calculate estimated shipping and tax using snake_case StoreConfig fields
+  const shippingCost = config?.free_shipping_threshold && subtotal >= config.free_shipping_threshold
+    ? 0
+    : (config?.shipping_cost ?? 0);
+  const taxRate = config ? parseFloat(config.tax_rate) : 0;
+  const estimatedTax = Math.round(subtotal * taxRate);
+  const estimatedTotal = subtotal + shippingCost + estimatedTax;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -33,13 +47,14 @@ export default function CheckoutPage() {
       firstName: formData.get("firstName") as string,
       lastName: formData.get("lastName") as string,
       phone: (formData.get("phone") as string) || undefined,
+      clerkUserId: userId, // C2 FIX: Pass Clerk user ID to link order
       address: {
         addressLine1: formData.get("address") as string,
-        addressLine2: undefined,
+        addressLine2: (formData.get("addressLine2") as string) || undefined,
         city: formData.get("city") as string,
         state: formData.get("state") as string,
         postalCode: formData.get("zip") as string,
-        country: "US",
+        country: formData.get("country") as string,
       },
     };
 
@@ -117,19 +132,39 @@ export default function CheckoutPage() {
               <Label htmlFor="address">Address</Label>
               <Input id="address" name="address" required />
             </div>
+            <div>
+              <Label htmlFor="addressLine2">Apartment, suite, etc. (optional)</Label>
+              <Input id="addressLine2" name="addressLine2" />
+            </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="city">City</Label>
                 <Input id="city" name="city" required />
               </div>
               <div>
-                <Label htmlFor="state">State</Label>
+                <Label htmlFor="state">State / Province</Label>
                 <Input id="state" name="state" required />
               </div>
               <div>
-                <Label htmlFor="zip">ZIP Code</Label>
+                <Label htmlFor="zip">ZIP / Postal Code</Label>
                 <Input id="zip" name="zip" required />
               </div>
+            </div>
+            <div>
+              <Label htmlFor="country">Country</Label>
+              <select
+                id="country"
+                name="country"
+                required
+                defaultValue="US"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {COUNTRIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -151,11 +186,16 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between text-sm">
                 <span>Shipping</span>
-                <span>Calculated at next step</span>
+                <span>{shippingCost === 0 ? "Free" : formatPrice(shippingCost)}</span>
               </div>
+              <div className="flex justify-between text-sm">
+                <span>Tax</span>
+                <span>{formatPrice(estimatedTax)}</span>
+              </div>
+              {/* H6 FIX: Show estimated total including shipping and tax */}
               <div className="flex justify-between font-medium text-lg pt-2">
-                <span>Total</span>
-                <span>{formatPrice(subtotal)}</span>
+                <span>Estimated Total</span>
+                <span>{formatPrice(estimatedTotal)}</span>
               </div>
             </div>
             <Button type="submit" className="w-full mt-6 py-6" disabled={loading}>

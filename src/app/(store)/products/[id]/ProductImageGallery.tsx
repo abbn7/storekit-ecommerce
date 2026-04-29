@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { Package } from "lucide-react"; // I1 FIX: Import icon for placeholder
 
 interface ProductImage {
   url: string;
@@ -16,16 +17,16 @@ interface ProductImageGalleryProps {
 export function ProductImageGallery({ images }: ProductImageGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  // Fallback placeholder if no images
+  // I1 FIX: Use styled placeholder instead of Unsplash fallback
   const displayImages = images.length > 0
     ? images
-    : [{ url: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=1000&fit=crop", altText: "Product image" }];
+    : [{ url: "", altText: "No image available" }];
 
   return (
     <div className="space-y-4">
       {/* Main image */}
       <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-        {displayImages[selectedIndex] ? (
+        {displayImages[selectedIndex]?.url ? (
           <Image
             src={displayImages[selectedIndex].url}
             alt={displayImages[selectedIndex].altText || "Product image"}
@@ -35,8 +36,9 @@ export function ProductImageGallery({ images }: ProductImageGalleryProps) {
             priority
           />
         ) : (
-          <div className="flex items-center justify-center h-full text-muted-foreground">
-            No image available
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
+            <Package className="h-16 w-16" />
+            <p className="text-sm">No image available</p>
           </div>
         )}
       </div>
@@ -53,13 +55,19 @@ export function ProductImageGallery({ images }: ProductImageGalleryProps) {
                 selectedIndex === i ? "border-foreground" : "border-transparent"
               )}
             >
-              <Image
-                src={img.url}
-                alt={img.altText || `Product thumbnail ${i + 1}`}
-                fill
-                className="object-cover"
-                sizes="80px"
-              />
+              {img.url ? (
+                <Image
+                  src={img.url}
+                  alt={img.altText || `Product thumbnail ${i + 1}`}
+                  fill
+                  className="object-cover"
+                  sizes="80px"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <Package className="h-6 w-6 text-muted-foreground" />
+                </div>
+              )}
             </button>
           ))}
         </div>
