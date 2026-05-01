@@ -1,3 +1,4 @@
+﻿import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { getProducts, getProductsCount } from "@/lib/db/queries/products";
 import { apiPaginatedResponse, apiError } from "@/lib/api-response";
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
 
     return apiPaginatedResponse(products, page, limit, total);
   } catch (error) {
-    console.error("Error fetching products:", error);
+    logger.error("Error fetching products:", error);
     return apiError("Failed to fetch products", 500);
   }
 }

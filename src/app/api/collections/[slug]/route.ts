@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { getCollectionBySlug } from "@/lib/db/queries/collections";
 import { apiResponse, apiError } from "@/lib/api-response";
@@ -14,7 +15,7 @@ export async function GET(
     }
     return apiResponse(collection);
   } catch (error) {
-    console.error("Error fetching collection:", error);
+    logger.error("Error fetching collection:", error);
     return apiError("Failed to fetch collection", 500);
   }
 }

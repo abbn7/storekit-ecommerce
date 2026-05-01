@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { updateTestimonial, deleteTestimonial } from "@/lib/db/queries/store";
@@ -25,7 +26,7 @@ export async function PATCH(
     if (!testimonial) return apiError("Testimonial not found", 404);
     return apiResponse(testimonial);
   } catch (error) {
-    console.error("Error updating testimonial:", error);
+    logger.error("Error updating testimonial:", error);
     return apiError("Failed to update testimonial", 500);
   }
 }
@@ -44,7 +45,7 @@ export async function DELETE(
     if (!deleted) return apiError("Testimonial not found", 404);
     return apiResponse({ success: true });
   } catch (error) {
-    console.error("Error deleting testimonial:", error);
+    logger.error("Error deleting testimonial:", error);
     return apiError("Failed to delete testimonial", 500);
   }
 }

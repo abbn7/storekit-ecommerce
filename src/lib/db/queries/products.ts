@@ -1,4 +1,4 @@
-import { eq, and, or, ilike, desc, asc, count, inArray } from "drizzle-orm";
+import { eq, and, or, ilike, desc, asc, count, inArray, gte, lte, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { products, productImages, productVariants, productCollections, collections } from "@/lib/db/schema";
 import type { ProductFilters } from "@/types";
@@ -79,6 +79,12 @@ export async function getProducts(filters?: ProductFilters & { includeInactive?:
 
   if (filters?.is_featured) conditions.push(eq(products.isFeatured, true));
   if (filters?.is_new) conditions.push(eq(products.isNew, true));
+  if (filters?.min_price != null) conditions.push(gte(products.price, filters.min_price));
+  if (filters?.max_price != null) conditions.push(lte(products.price, filters.max_price));
+  if (filters?.material) {
+    const escapedMaterial = filters.material.replace(/[%_\\]/g, "\\$&");
+    conditions.push(ilike(products.material, `%${escapedMaterial}%`));
+  }
   if (filters?.search) {
     // Escape special LIKE pattern characters to prevent unexpected query behavior
     const escaped = filters.search.replace(/[%_\\]/g, "\\$&");
@@ -100,6 +106,9 @@ export async function getProducts(filters?: ProductFilters & { includeInactive?:
       break;
     case "name":
       orderBy = asc(products.name);
+      break;
+    case "bestselling":
+      orderBy = desc(products.isFeatured);
       break;
     default:
       orderBy = desc(products.createdAt);
@@ -281,6 +290,21 @@ export async function getProductsCount(filters?: ProductFilters) {
   const conditions = [eq(products.isActive, true)];
   if (filters?.is_featured) conditions.push(eq(products.isFeatured, true));
   if (filters?.is_new) conditions.push(eq(products.isNew, true));
+  if (filters?.min_price != null) conditions.push(gte(products.price, filters.min_price));
+  if (filters?.max_price != null) conditions.push(lte(products.price, filters.max_price));
+  if (filters?.material) {
+    const escapedMaterial = filters.material.replace(/[%_\\]/g, "\\$&");
+    conditions.push(ilike(products.material, `%${escapedMaterial}%`));
+  }
+  if (filters?.search) {
+    const escaped = filters.search.replace(/[%_\\]/g, "\\$&");
+    conditions.push(
+      or(
+        ilike(products.name, `%${escaped}%`),
+        ilike(products.description, `%${escaped}%`)
+      )!
+    );
+  }
 
   if (filters?.collection) {
     const [result] = await db
@@ -299,6 +323,155 @@ export async function getProductsCount(filters?: ProductFilters) {
     .where(and(...conditions));
 
   return result?.count ?? 0;
+}
+
+/** Get related products from the same collection(s) */
+export async function getRelatedProducts(productId: string, limit: number = 4) {
+  const safeLimit = Math.max(1, Math.min(12, limit));
+
+  // Find collections this product belongs to
+  const productCollectionRows = await db
+    .select({ collectionId: productCollections.collectionId })
+    .from(productCollections)
+    .where(eq(productCollections.productId, productId));
+
+  if (productCollectionRows.length === 0) {
+    // Fallback: return latest products excluding current
+    const result = await db
+      .select()
+      .from(products)
+      .where(and(eq(products.isActive, true), sql`${products.id} != ${productId}`))
+      .orderBy(desc(products.createdAt))
+      .limit(safeLimit);
+
+    return batchFetchImages(result);
+  }
+
+  const collectionIds = productCollectionRows.map((r) => r.collectionId);
+
+  // Get products from same collections, excluding current product
+  const result = await db
+    .select({
+      id: products.id,
+      name: products.name,
+      slug: products.slug,
+      description: products.description,
+      shortDescription: products.shortDescription,
+      price: products.price,
+      compareAtPrice: products.compareAtPrice,
+      cost: products.cost,
+      sku: products.sku,
+      barcode: products.barcode,
+      isActive: products.isActive,
+      isFeatured: products.isFeatured,
+      isNew: products.isNew,
+      material: products.material,
+      careInstructions: products.careInstructions,
+      metaTitle: products.metaTitle,
+      metaDescription: products.metaDescription,
+      createdAt: products.createdAt,
+      updatedAt: products.updatedAt,
+    })
+    .from(products)
+    .innerJoin(productCollections, eq(products.id, productCollections.productId))
+    .where(
+      and(
+        eq(products.isActive, true),
+        sql`${products.id} != ${productId}`,
+        inArray(productCollections.collectionId, collectionIds)
+      )
+    )
+    .orderBy(desc(products.createdAt))
+    .limit(safeLimit);
+
+  return batchFetchImages(result);
+}
+
+/** Get distinct materials for filter facets */
+export async function getAvailableMaterials(collectionSlug?: string) {
+  if (collectionSlug) {
+    const result = await db
+      .selectDistinct({ material: products.material })
+      .from(products)
+      .innerJoin(productCollections, eq(products.id, productCollections.productId))
+      .innerJoin(collections, eq(productCollections.collectionId, collections.id))
+      .where(
+        and(
+          eq(products.isActive, true),
+          eq(collections.slug, collectionSlug),
+          sql`${products.material} IS NOT NULL`
+        )
+      );
+    return result.map((r) => r.material!).filter(Boolean);
+  }
+
+  const result = await db
+    .selectDistinct({ material: products.material })
+    .from(products)
+    .where(and(eq(products.isActive, true), sql`${products.material} IS NOT NULL`));
+
+  return result.map((r) => r.material!).filter(Boolean);
+}
+
+/** Get min/max price range for filter facets */
+export async function getPriceRange(collectionSlug?: string) {
+  if (collectionSlug) {
+    const [result] = await db
+      .select({
+        min: sql<number>`COALESCE(MIN(${products.price}), 0)`,
+        max: sql<number>`COALESCE(MAX(${products.price}), 0)`,
+      })
+      .from(products)
+      .innerJoin(productCollections, eq(products.id, productCollections.productId))
+      .innerJoin(collections, eq(productCollections.collectionId, collections.id))
+      .where(and(eq(products.isActive, true), eq(collections.slug, collectionSlug)));
+
+    return { min: result?.min ?? 0, max: result?.max ?? 0 };
+  }
+
+  const [result] = await db
+    .select({
+      min: sql<number>`COALESCE(MIN(${products.price}), 0)`,
+      max: sql<number>`COALESCE(MAX(${products.price}), 0)`,
+    })
+    .from(products)
+    .where(eq(products.isActive, true));
+
+  return { min: result?.min ?? 0, max: result?.max ?? 0 };
+}
+
+/** Shared helper: batch-fetch images for a list of products */
+async function batchFetchImages<T extends { id: string }>(result: T[]) {
+  const productIds = result.map((p) => p.id);
+  if (productIds.length === 0) return result.map((product) => ({ ...product, images: [] as typeof allImages, variants: [] as never[] }));
+
+  const allImages = await db
+    .select({
+      productId: productImages.productId,
+      id: productImages.id,
+      url: productImages.url,
+      altText: productImages.altText,
+      width: productImages.width,
+      height: productImages.height,
+      isPrimary: productImages.isPrimary,
+      sortOrder: productImages.sortOrder,
+    })
+    .from(productImages)
+    .where(inArray(productImages.productId, productIds))
+    .orderBy(productImages.sortOrder);
+
+  const imagesByProductId = new Map<string, typeof allImages>();
+  for (const img of allImages) {
+    const existing = imagesByProductId.get(img.productId) ?? [];
+    existing.push(img);
+    imagesByProductId.set(img.productId, existing);
+  }
+
+  return result.map((product) => ({
+    ...product,
+    images: imagesByProductId.get(product.id) ?? [],
+    variants: [] as never[],
+  }));
 }
 
 export async function getAllActiveProducts() {

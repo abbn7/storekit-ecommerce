@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ProductCard } from "./ProductCard";
 import { Button } from "@/components/ui/button";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/lib/motion";
+import { ArrowRight } from "lucide-react";
 
 interface NewArrivalsProps {
   products: {
@@ -19,21 +20,28 @@ interface NewArrivalsProps {
 
 export function NewArrivals({ products }: NewArrivalsProps) {
   return (
-    <section className="py-20 lg:py-28 bg-muted/30">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className="py-20 lg:py-28 bg-muted/30 relative overflow-hidden">
+      {/* Subtle decorative element */}
+      <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-accent/5 blur-3xl -translate-y-1/2 translate-x-1/2" aria-hidden="true" />
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
         <FadeIn>
-          <div className="flex items-end justify-between mb-12">
+          <div className="flex items-end justify-between mb-14">
             <div>
-              <h2 className="font-heading text-3xl sm:text-4xl font-light tracking-wide">
+              <span className="text-xs tracking-[0.2em] uppercase text-muted-foreground mb-3 block">
+                Just In
+              </span>
+              <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-light tracking-wide">
                 New Arrivals
               </h2>
               <p className="text-muted-foreground mt-2">The latest additions to our collection</p>
             </div>
             <Link
               href="/collections?sort=newest"
-              className="hidden sm:block text-xs tracking-wider uppercase hover:text-accent transition-colors"
+              className="hidden sm:flex items-center gap-2 text-xs tracking-wider uppercase hover:text-accent transition-colors group"
             >
-              View All →
+              View All
+              <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
         </FadeIn>

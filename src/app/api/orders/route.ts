@@ -2,14 +2,16 @@ import { NextRequest } from "next/server";
 import { deleteOrder, restoreStock } from "@/lib/db/queries/orders";
 import { getProductById } from "@/lib/db/queries/products";
 import { getStoreConfig } from "@/lib/db/queries/store";
-import { createCheckoutSession, calculateOrderAmount } from "@/lib/stripe";
+import { validateDiscountCode, incrementDiscountUsage, getDiscountCodeByCode } from "@/lib/db/queries/discounts";
+import { createCheckoutSession, calculateOrderAmount, stripe } from "@/lib/stripe";
 import { apiResponse, apiError } from "@/lib/api-response";
 import { db } from "@/lib/db";
-import { orders, orderItems, productVariants } from "@/lib/db/schema";
+import { orders, orderItems, productVariants, products } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { formatZodError } from "@/lib/utils";
 import { auth } from "@clerk/nextjs/server";
+import { logger } from "@/lib/logger";
 
 // Zod schema for order creation
 const orderItemSchema = z.object({
@@ -35,6 +37,7 @@ const createOrderSchema = z.object({
   lastName: z.string().min(1).max(255),
   phone: z.string().max(50).optional(),
   address: addressSchema,
+  discountCode: z.string().max(100).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -47,7 +50,7 @@ export async function POST(request: NextRequest) {
       return apiError(`Validation error: ${formatZodError(parsed.error)}`, 400);
     }
 
-    const { items, email, firstName, lastName, phone, address } = parsed.data;
+    const { items, email, firstName, lastName, phone, address, discountCode } = parsed.data;
     const { userId } = await auth();
 
     // CRITICAL FIX: Fetch product prices from DB — never trust client-submitted prices
@@ -109,10 +112,33 @@ export async function POST(request: NextRequest) {
     );
 
     // Check free shipping threshold
-    const finalShipping = config?.freeShippingThreshold && subtotal >= config.freeShippingThreshold
+    let finalShipping = config?.freeShippingThreshold && subtotal >= config.freeShippingThreshold
       ? 0
       : shipping;
-    const finalTotal = subtotal + finalShipping + tax;
+
+    // Validate and apply discount code server-side
+    let discountAmount = 0;
+    let discountId: string | null = null;
+    if (discountCode) {
+      const validation = await validateDiscountCode(discountCode, subtotal);
+      if (!validation.valid) {
+        return apiError(validation.error || "Invalid discount code", 400);
+      }
+      if (validation.discount) {
+        discountAmount = validation.discount.discount_amount;
+        // For free_shipping type, waive the shipping cost
+        if (validation.discount.type === "free_shipping") {
+          finalShipping = 0;
+        }
+        // Look up the discount code ID for usage tracking
+        const discountRecord = await getDiscountCodeByCode(discountCode);
+        if (discountRecord) {
+          discountId = discountRecord.id;
+        }
+      }
+    }
+
+    const finalTotal = Math.max(0, subtotal - discountAmount) + finalShipping + tax;
 
     // CRITICAL FIX: Create order and reserve stock atomically in a transaction
     // This prevents race conditions where two orders check stock simultaneously
@@ -158,6 +184,7 @@ export async function POST(request: NextRequest) {
       // Uses UPDATE with WHERE clause — if stock is insufficient, update returns 0 rows
       for (const item of dbItems) {
         if (item.variantId) {
+          // NEW-M7: Decrement variant stock
           const [updated] = await tx
             .update(productVariants)
             .set({ stock: sql`${productVariants.stock} - ${item.quantity}` })
@@ -168,6 +195,19 @@ export async function POST(request: NextRequest) {
 
           if (!updated) {
             throw new Error(`Insufficient stock for variant: ${item.variantId}`);
+          }
+        } else {
+          // NEW-M7: Decrement product stock for products without variants
+          const [updated] = await tx
+            .update(products)
+            .set({ stock: sql`${products.stock} - ${item.quantity}` })
+            .where(
+              sql`${products.id} = ${item.productId} AND ${products.stock} >= ${item.quantity}`
+            )
+            .returning({ stock: products.stock });
+
+          if (!updated) {
+            throw new Error(`Insufficient stock for product: ${item.productId}`);
           }
         }
       }
@@ -198,7 +238,7 @@ export async function POST(request: NextRequest) {
       });
     } catch (stripeError) {
       // CRITICAL FIX: Stripe session creation failed — restore stock before deleting order
-      console.error("Stripe session creation failed, restoring stock and cleaning up order:", stripeError);
+      logger.error("Stripe session creation failed, restoring stock and cleaning up order:", stripeError);
       await restoreStock(order.id);
       await deleteOrder(order.id);
       return apiError("Failed to create payment session. Please try again.", 500);
@@ -210,9 +250,29 @@ export async function POST(request: NextRequest) {
       .set({ stripeSessionId: session.id })
       .where(eq(orders.id, order.id));
 
+    // NEW-H2: Update the PaymentIntent metadata with orderId so the
+    // payment_intent.payment_failed webhook can find the order
+    if (session.payment_intent && typeof session.payment_intent === "string") {
+      try {
+        await stripe.paymentIntents.update(session.payment_intent, {
+          metadata: { orderId: order.id },
+        });
+      } catch (metadataError) {
+        // Non-critical: log but don't fail the order
+        logger.error("Failed to update PaymentIntent metadata:", metadataError);
+      }
+    }
+
+    // Increment discount code usage after successful order
+    if (discountId) {
+      await incrementDiscountUsage(discountId).catch((err) =>
+        logger.error("Failed to increment discount usage:", err)
+      );
+    }
+
     return apiResponse({ orderId: order.id, checkoutUrl: session.url }, undefined, 201);
   } catch (error) {
-    console.error("Error creating order:", error);
+    logger.error("Error creating order:", error);
     return apiError("Failed to create order", 500);
   }
 }

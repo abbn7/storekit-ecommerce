@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { getOrderById, updateOrderStatus } from "@/lib/db/queries/orders";
@@ -20,7 +21,7 @@ export async function GET(
     if (!order) return apiError("Order not found", 404);
     return apiResponse(order);
   } catch (error) {
-    console.error("Error fetching order:", error);
+    logger.error("Error fetching order:", error);
     return apiError("Failed to fetch order", 500);
   }
 }
@@ -74,13 +75,13 @@ export async function PATCH(
           html,
         });
       } catch (emailError) {
-        console.error("Failed to send status email:", emailError);
+        logger.error("Failed to send status email:", emailError);
       }
     }
 
     return apiResponse(order);
   } catch (error) {
-    console.error("Error updating order:", error);
+    logger.error("Error updating order:", error);
     return apiError("Failed to update order", 500);
   }
 }

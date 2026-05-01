@@ -71,7 +71,34 @@ export interface ProductFilters {
   is_featured?: boolean;
   is_new?: boolean;
   search?: string;
-  sort?: "newest" | "price_asc" | "price_desc" | "name";
+  sort?: "newest" | "price_asc" | "price_desc" | "name" | "bestselling";
   page?: number;
   limit?: number;
+}
+
+// ─── Reviews ──────────────────────────────────────────
+export interface Review {
+  id: string;
+  product_id: string;
+  clerk_user_id: string;
+  author_name: string;
+  rating: number;
+  title: string | null;
+  content: string | null;
+  is_verified_purchase: boolean;
+  is_approved: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReviewStats {
+  average_rating: number;
+  total_reviews: number;
+  rating_distribution: Record<number, number>; // { 5: 12, 4: 8, ... }
+}
+
+export interface ReviewWithStats {
+  reviews: Review[];
+  stats: ReviewStats;
+  has_more: boolean;
 }

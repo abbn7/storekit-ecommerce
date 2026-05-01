@@ -1,5 +1,6 @@
 import {
   pgTable,
+  pgEnum,
   uuid,
   text,
   varchar,
@@ -29,6 +30,9 @@ export const storeConfig = pgTable("store_config", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// ─── Discount Type Enum (NEW-L4) ──────────────────────
+export const discountTypeEnum = pgEnum("discount_type", ["percentage", "fixed", "free_shipping"]);
+
 // ─── Products ─────────────────────────────────────────
 export const products = pgTable("products", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -41,6 +45,7 @@ export const products = pgTable("products", {
   cost: integer("cost"),
   sku: varchar("sku", { length: 100 }),
   barcode: varchar("barcode", { length: 100 }),
+  stock: integer("stock").notNull().default(0), // NEW-M7: Stock for products without variants
   isActive: boolean("is_active").notNull().default(true),
   isFeatured: boolean("is_featured").notNull().default(false),
   isNew: boolean("is_new").notNull().default(false),
@@ -190,3 +195,52 @@ export const processedWebhookEvents = pgTable("processed_webhook_events", {
   eventId: varchar("event_id", { length: 255 }).primaryKey(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+// ─── Product Reviews ──────────────────────────────────
+export const productReviews = pgTable("product_reviews", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  productId: uuid("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  clerkUserId: varchar("clerk_user_id", { length: 255 }).notNull(),
+  authorName: varchar("author_name", { length: 255 }).notNull(),
+  rating: integer("rating").notNull(),
+  title: varchar("title", { length: 255 }),
+  content: text("content"),
+  isVerifiedPurchase: boolean("is_verified_purchase").notNull().default(false),
+  isApproved: boolean("is_approved").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("product_reviews_product_idx").on(table.productId),
+  index("product_reviews_clerk_user_idx").on(table.clerkUserId),
+  index("product_reviews_approved_idx").on(table.isApproved),
+  index("product_reviews_rating_idx").on(table.rating),
+]);
+
+// ─── Discount Codes ───────────────────────────────────
+export const discountCodes = pgTable("discount_codes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  code: varchar("code", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  type: discountTypeEnum("type").notNull(), // NEW-L4: Use pgEnum instead of varchar
+  value: integer("value").notNull().default(0),
+  minOrderAmount: integer("min_order_amount"),
+  maxUses: integer("max_uses"),
+  usedCount: integer("used_count").notNull().default(0),
+  startsAt: timestamp("starts_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("discount_codes_code_idx").on(table.code),
+  index("discount_codes_active_idx").on(table.isActive),
+]);
+
+// ─── Newsletter Subscribers (NEW-M3) ──────────────────
+export const newsletterSubscribers = pgTable("newsletter_subscribers", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  subscribedAt: timestamp("subscribed_at").notNull().defaultNow(),
+  unsubscribedAt: timestamp("unsubscribed_at"),
+}, (table) => [
+  index("newsletter_subscribers_email_idx").on(table.email),
+]);

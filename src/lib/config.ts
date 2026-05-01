@@ -31,6 +31,7 @@ const envSchema = z.object({
   // Admin
   ADMIN_PASSWORD: z.string().min(8, "Admin password must be at least 8 characters"),
   ADMIN_SECRET: z.string().min(8).optional(),
+  CRON_SECRET: z.string().min(8).optional(),
 
   // App
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),

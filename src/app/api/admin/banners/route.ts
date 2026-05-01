@@ -1,3 +1,4 @@
+﻿import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { getBanners, createBanner } from "@/lib/db/queries/store";
@@ -13,7 +14,7 @@ export async function GET() {
     const bannersList = await getBanners();
     return apiResponse(bannersList);
   } catch (error) {
-    console.error("Error fetching banners:", error);
+    logger.error("Error fetching banners:", error);
     return apiError("Failed to fetch banners", 500);
   }
 }
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
     const banner = await createBanner(parsed.data);
     return apiResponse(banner, undefined, 201);
   } catch (error) {
-    console.error("Error creating banner:", error);
+    logger.error("Error creating banner:", error);
     return apiError("Failed to create banner", 500);
   }
 }

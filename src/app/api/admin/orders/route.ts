@@ -1,3 +1,4 @@
+﻿import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { getOrders } from "@/lib/db/queries/orders";
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
     const orders = await getOrders(page, limit, status);
     return apiResponse(orders);
   } catch (error) {
-    console.error("Error fetching orders:", error);
+    logger.error("Error fetching orders:", error);
     return apiError("Failed to fetch orders", 500);
   }
 }

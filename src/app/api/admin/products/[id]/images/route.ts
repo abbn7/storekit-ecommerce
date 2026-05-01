@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { addProductImage } from "@/lib/db/queries/products";
@@ -40,7 +41,7 @@ export async function POST(
 
     return apiResponse(image, undefined, 201);
   } catch (error) {
-    console.error("Error adding product image:", error);
+    logger.error("Error adding product image:", error);
     return apiError("Failed to add image", 500);
   }
 }

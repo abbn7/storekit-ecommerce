@@ -1,3 +1,4 @@
+﻿import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { getProducts, createProduct } from "@/lib/db/queries/products";
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     const products = await getProducts({ page, limit, search, includeInactive: true });
     return apiResponse(products);
   } catch (error) {
-    console.error("Error fetching products:", error);
+    logger.error("Error fetching products:", error);
     return apiError("Failed to fetch products", 500);
   }
 }
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
     const product = await createProduct(parsed.data);
     return apiResponse(product, undefined, 201);
   } catch (error) {
-    console.error("Error creating product:", error);
+    logger.error("Error creating product:", error);
     return apiError("Failed to create product", 500);
   }
 }

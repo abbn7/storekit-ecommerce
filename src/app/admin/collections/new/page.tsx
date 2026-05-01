@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 "use client";
 
 import { useState } from "react";
@@ -30,7 +31,7 @@ export default function NewCollectionPage() {
       });
       if (res.ok) router.push("/admin/collections");
     } catch (error) {
-      console.error(error);
+      logger.error(error);
     } finally {
       setLoading(false);
     }

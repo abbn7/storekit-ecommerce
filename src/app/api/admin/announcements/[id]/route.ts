@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { updateAnnouncement, deleteAnnouncement } from "@/lib/db/queries/store";
@@ -25,7 +26,7 @@ export async function PATCH(
     if (!announcement) return apiError("Announcement not found", 404);
     return apiResponse(announcement);
   } catch (error) {
-    console.error("Error updating announcement:", error);
+    logger.error("Error updating announcement:", error);
     return apiError("Failed to update announcement", 500);
   }
 }
@@ -44,7 +45,7 @@ export async function DELETE(
     if (!deleted) return apiError("Announcement not found", 404);
     return apiResponse({ success: true });
   } catch (error) {
-    console.error("Error deleting announcement:", error);
+    logger.error("Error deleting announcement:", error);
     return apiError("Failed to delete announcement", 500);
   }
 }

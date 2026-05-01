@@ -4,8 +4,9 @@ import { getStoreConfig } from "@/lib/db/queries/store";
 import { sendEmail, generateOrderConfirmationHtml } from "@/lib/email";
 import { apiError } from "@/lib/api-response";
 import { db } from "@/lib/db";
-import { processedWebhookEvents, orders, orderItems, productVariants } from "@/lib/db/schema";
+import { processedWebhookEvents, orders, orderItems, productVariants, products } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
               });
             }
           } catch (emailError) {
-            console.error("Failed to send confirmation email:", emailError);
+            logger.error("Failed to send confirmation email:", emailError);
           }
         }
         break;
@@ -111,13 +112,22 @@ export async function POST(request: NextRequest) {
 
       case "payment_intent.payment_failed": {
         const paymentIntent = event.data.object;
-        console.error("Payment failed:", paymentIntent.id);
+        logger.error("Payment failed:", paymentIntent.id);
 
-        // CRITICAL FIX: Restore stock and cancel order when payment fails
+        // NEW-H2 FIX: Now works because we set orderId on the PaymentIntent after checkout session creation
         if (paymentIntent.metadata?.orderId) {
           const orderId = paymentIntent.metadata.orderId;
-          // Restore stock inside a transaction
+          // Restore stock inside a transaction with idempotency
           await db.transaction(async (tx) => {
+            // Idempotency check
+            const [inserted] = await tx
+              .insert(processedWebhookEvents)
+              .values({ eventId: event.id })
+              .onConflictDoNothing()
+              .returning({ eventId: processedWebhookEvents.eventId });
+
+            if (!inserted) return; // Already processed
+
             const items = await tx
               .select()
               .from(orderItems)
@@ -129,6 +139,12 @@ export async function POST(request: NextRequest) {
                   .update(productVariants)
                   .set({ stock: sql`${productVariants.stock} + ${item.quantity}` })
                   .where(eq(productVariants.id, item.variantId));
+              } else if (item.productId) {
+                // NEW-M7: Restore product stock for products without variants
+                await tx
+                  .update(products)
+                  .set({ stock: sql`${products.stock} + ${item.quantity}` })
+                  .where(eq(products.id, item.productId));
               }
             }
 
@@ -143,17 +159,26 @@ export async function POST(request: NextRequest) {
 
       case "checkout.session.expired": {
         const session = event.data.object;
-        console.log("Checkout session expired:", session.id);
+        logger.info("Checkout session expired:", session.id);
 
-        // CRITICAL FIX: Restore stock when user abandons checkout
-        const [order] = await db
-          .select()
-          .from(orders)
-          .where(eq(orders.stripeSessionId, session.id))
-          .limit(1);
+        // NEW-M2 FIX: Restore stock when user abandons checkout (with idempotency)
+        await db.transaction(async (tx) => {
+          // Idempotency check — prevent double stock restore
+          const [inserted] = await tx
+            .insert(processedWebhookEvents)
+            .values({ eventId: event.id })
+            .onConflictDoNothing()
+            .returning({ eventId: processedWebhookEvents.eventId });
 
-        if (order && order.status === "pending") {
-          await db.transaction(async (tx) => {
+          if (!inserted) return; // Already processed
+
+          const [order] = await tx
+            .select()
+            .from(orders)
+            .where(eq(orders.stripeSessionId, session.id))
+            .limit(1);
+
+          if (order && order.status === "pending") {
             const items = await tx
               .select()
               .from(orderItems)
@@ -165,6 +190,12 @@ export async function POST(request: NextRequest) {
                   .update(productVariants)
                   .set({ stock: sql`${productVariants.stock} + ${item.quantity}` })
                   .where(eq(productVariants.id, item.variantId));
+              } else if (item.productId) {
+                // NEW-M7: Restore product stock for products without variants
+                await tx
+                  .update(products)
+                  .set({ stock: sql`${products.stock} + ${item.quantity}` })
+                  .where(eq(products.id, item.productId));
               }
             }
 
@@ -172,13 +203,13 @@ export async function POST(request: NextRequest) {
               .update(orders)
               .set({ status: "cancelled", updatedAt: new Date() })
               .where(eq(orders.id, order.id));
-          });
-        }
+          }
+        });
         break;
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        logger.debug(`Unhandled event type: ${event.type}`);
     }
 
     return new Response(JSON.stringify({ received: true }), {
@@ -186,7 +217,7 @@ export async function POST(request: NextRequest) {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Webhook error:", error);
+    logger.error("Webhook handler failed:", error);
     return apiError("Webhook handler failed", 500);
   }
 }

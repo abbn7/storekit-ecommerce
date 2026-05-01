@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 "use client";
 
 import { useReducer, useEffect } from "react";
@@ -64,7 +65,7 @@ export function useStoreConfig() {
         }
       })
       .catch((err) => {
-        console.error(err);
+        logger.error(err);
         dispatch({ type: "FETCH_ERROR" });
       });
   }, []);

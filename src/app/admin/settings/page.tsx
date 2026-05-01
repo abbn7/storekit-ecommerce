@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 "use client";
 
 import { useState, useEffect } from "react";
@@ -64,7 +65,7 @@ export default function AdminSettingsPage() {
       });
       setSaved(true);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
     } finally {
       setLoading(false);
     }

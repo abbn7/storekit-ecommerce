@@ -228,6 +228,8 @@
   --animate-slide-in-right: slide-in-right 0.3s ease-out forwards;
   --animate-slide-in-left: slide-in-left 0.3s ease-out forwards;
   --animate-shimmer: shimmer 2s ease-in-out infinite;
+  --animate-ken-burns: ken-burns 20s ease-in-out infinite alternate;
+  --animate-ken-burns-alt: ken-burns-alt 20s ease-in-out infinite alternate;
 }
 
 /* ─── Keyframes ─────────────────────────────────────── */
@@ -268,6 +270,21 @@
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
+}
+
+@keyframes ken-burns {
+  0% { transform: scale(1) translate(0, 0); }
+  100% { transform: scale(1.08) translate(-1%, -0.5%); }
+}
+
+@keyframes ken-burns-alt {
+  0% { transform: scale(1.08) translate(-1%, -0.5%); }
+  100% { transform: scale(1) translate(0, 0); }
+}
+
+@keyframes scroll-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
 }
 
 /* ─── Base Styles ───────────────────────────────────── */
@@ -329,6 +346,18 @@
 
 .animate-shimmer {
   animation: var(--animate-shimmer);
+}
+
+.animate-ken-burns {
+  animation: var(--animate-ken-burns);
+}
+
+.animate-ken-burns-alt {
+  animation: var(--animate-ken-burns-alt);
+}
+
+.animate-scroll-bounce {
+  animation: scroll-bounce 2s ease-in-out infinite;
 }
 
 /* ─── Glass Morphism ────────────────────────────────── */
@@ -441,7 +470,10 @@
   .animate-fade-up,
   .animate-slide-in-right,
   .animate-slide-in-left,
-  .animate-shimmer {
+  .animate-shimmer,
+  .animate-ken-burns,
+  .animate-ken-burns-alt,
+  .animate-scroll-bounce {
     animation: none !important;
   }
 

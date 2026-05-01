@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import type { MetadataRoute } from "next";
 import { getAllActiveProducts } from "@/lib/db/queries/products";
 import { getAllActiveCollections } from "@/lib/db/queries/collections";
@@ -36,7 +37,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
   } catch (error) {
-    console.error("Failed to fetch dynamic sitemap entries:", error);
+    logger.error("Failed to fetch dynamic sitemap entries:", error);
   }
 
   return [...staticUrls, ...productUrls, ...collectionUrls];

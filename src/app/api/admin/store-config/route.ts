@@ -1,3 +1,4 @@
+﻿import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { getStoreConfig, updateStoreConfig } from "@/lib/db/queries/store";
@@ -14,7 +15,7 @@ export async function GET() {
     if (!config) return apiError("Store config not found", 404);
     return apiResponse(config);
   } catch (error) {
-    console.error("Error fetching store config:", error);
+    logger.error("Error fetching store config:", error);
     return apiError("Failed to fetch store config", 500);
   }
 }
@@ -32,7 +33,7 @@ export async function PATCH(request: NextRequest) {
     const config = await updateStoreConfig(parsed.data);
     return apiResponse(config);
   } catch (error) {
-    console.error("Error updating store config:", error);
+    logger.error("Error updating store config:", error);
     return apiError("Failed to update store config", 500);
   }
 }

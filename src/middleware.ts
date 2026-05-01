@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
@@ -42,7 +43,7 @@ const clerkHandler = clerkMiddleware(async (auth, req) => {
         return NextResponse.redirect(loginUrl);
       }
     } catch (error) {
-      console.error("[Admin Auth Error]", error);
+      logger.error("[Admin Auth Error]", error);
       const loginUrl = new URL("/admin/login", req.url);
       loginUrl.searchParams.set("redirect_url", req.url);
       return NextResponse.redirect(loginUrl);
@@ -60,7 +61,7 @@ export default async function middleware(req: NextRequest) {
     // If Clerk returns an error response (e.g., 404 from invalid secret key),
     // fall through to allow the page to render normally instead of showing a blank page
     if (response && response.status >= 400 && response.status !== 401 && response.status !== 307 && response.status !== 302) {
-      console.warn(`[Middleware] Clerk returned status ${response.status}, falling through to allow page render`);
+      logger.warn(`[Middleware] Clerk returned status ${response.status}, falling through to allow page render`);
       return NextResponse.next();
     }
 
@@ -79,7 +80,7 @@ export default async function middleware(req: NextRequest) {
     }
 
     // If Clerk throws entirely, still allow the page to render
-    console.error("[Middleware Error] Clerk middleware failed, continuing without auth:", error);
+    logger.error("[Middleware Error] Clerk middleware failed, continuing without auth:", error);
     return NextResponse.next();
   }
 }

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 "use client";
 
 import { useEffect, useState } from "react";
@@ -37,7 +38,7 @@ export default function EditProductPage() {
         setFetching(false);
       })
       .catch((err) => {
-        console.error(err);
+        logger.error(err);
         setFetching(false);
       });
   }, [id]);
@@ -68,7 +69,7 @@ export default function EditProductPage() {
       });
       if (res.ok) router.push("/admin/products");
     } catch (error) {
-      console.error(error);
+      logger.error(error);
     } finally {
       setLoading(false);
     }

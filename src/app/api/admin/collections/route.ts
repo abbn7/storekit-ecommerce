@@ -1,3 +1,4 @@
+﻿import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { getAllCollections, createCollection } from "@/lib/db/queries/collections";
@@ -13,7 +14,7 @@ export async function GET() {
     const collections = await getAllCollections();
     return apiResponse(collections);
   } catch (error) {
-    console.error("Error fetching collections:", error);
+    logger.error("Error fetching collections:", error);
     return apiError("Failed to fetch collections", 500);
   }
 }
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
     const collection = await createCollection(parsed.data);
     return apiResponse(collection, undefined, 201);
   } catch (error) {
-    console.error("Error creating collection:", error);
+    logger.error("Error creating collection:", error);
     return apiError("Failed to create collection", 500);
   }
 }

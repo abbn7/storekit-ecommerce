@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 "use client";
 
 import { useState } from "react";
@@ -77,7 +78,7 @@ export default function NewProductPage() {
 
       router.push("/admin/products");
     } catch (error) {
-      console.error(error);
+      logger.error(error);
     } finally {
       setLoading(false);
     }

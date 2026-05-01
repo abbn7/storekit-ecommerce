@@ -81,19 +81,19 @@ export function ProductCard({
   return (
     <motion.div
       className="group relative"
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.15 }}
+      whileHover={{ y: -6 }}
+      transition={{ duration: 0.2, ease: [0.2, 0.8, 0.2, 1] }}
     >
       <Link href={`/products/${slug}`} className="block">
         {/* Image container */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-muted rounded-lg">
+        <div className="relative aspect-[3/4] overflow-hidden bg-muted rounded-xl">
           {primaryImage ? (
             <>
               <Image
                 src={primaryImage}
                 alt={name}
                 fill
-                className="object-cover transition-opacity duration-500 group-hover:opacity-0"
+                className="object-cover transition-all duration-700 ease-[var(--ease-emphasized)] group-hover:scale-105 group-hover:opacity-0"
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
               />
               {secondaryImage && (
@@ -101,7 +101,7 @@ export function ProductCard({
                   src={secondaryImage}
                   alt={name}
                   fill
-                  className="object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                  className="object-cover opacity-0 transition-all duration-700 ease-[var(--ease-emphasized)] group-hover:opacity-100 group-hover:scale-105"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                 />
               )}
@@ -112,10 +112,13 @@ export function ProductCard({
             </div>
           )}
 
+          {/* Glass gradient overlay on hover */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
           {/* Badges */}
-          <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+          <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
             {isNew && (
-              <Badge variant="secondary" className="text-[10px] tracking-wider uppercase glass-panel border-0">
+              <Badge variant="secondary" className="text-[10px] tracking-wider uppercase bg-white/80 backdrop-blur-sm border-0">
                 New
               </Badge>
             )}
@@ -124,12 +127,26 @@ export function ProductCard({
                 -{discount}%
               </Badge>
             )}
+            {stock != null && stock > 0 && stock <= 5 && (
+              <Badge variant="secondary" className="text-[10px] tracking-wider uppercase bg-amber-500/90 text-white backdrop-blur-sm border-0">
+                Low Stock
+              </Badge>
+            )}
           </div>
+
+          {/* Sold Out overlay */}
+          {stock != null && stock <= 0 && (
+            <div className="absolute inset-0 bg-foreground/60 backdrop-blur-[2px] z-20 flex items-center justify-center">
+              <span className="font-heading text-lg tracking-[0.2em] uppercase text-background/90">
+                Sold Out
+              </span>
+            </div>
+          )}
 
           {/* Wishlist button */}
           <motion.button
             onClick={handleWishlist}
-            className="absolute top-3 right-3 p-2 rounded-full glass-panel hover:bg-white transition-colors"
+            className="absolute top-3 right-3 p-2 rounded-full bg-white/70 backdrop-blur-sm hover:bg-white transition-all duration-200 opacity-0 group-hover:opacity-100"
             aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
             whileTap={{ scale: 0.9 }}
           >
@@ -141,11 +158,11 @@ export function ProductCard({
             />
           </motion.button>
 
-          {/* Quick Add button */}
-          <div className="absolute bottom-0 left-0 right-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-[var(--ease-standard)]">
+          {/* Quick Add button with glass effect */}
+          <div className="absolute bottom-0 left-0 right-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-[var(--ease-emphasized)]">
             <button
               onClick={handleQuickAdd}
-              className="w-full bg-foreground/90 backdrop-blur-sm text-background py-3 text-xs font-medium tracking-wider uppercase hover:bg-foreground transition-colors"
+              className="w-full bg-white/85 backdrop-blur-md text-foreground py-3 text-xs font-medium tracking-wider uppercase hover:bg-white transition-colors"
             >
               Quick Add
             </button>
@@ -154,7 +171,9 @@ export function ProductCard({
 
         {/* Product info */}
         <div className="mt-3 space-y-1">
-          <h3 className="text-sm font-medium truncate">{name}</h3>
+          <h3 className="text-sm font-medium truncate transition-colors duration-200 group-hover:text-accent">
+            {name}
+          </h3>
           <div className="flex items-center gap-2">
             <span className={cn("text-sm", isOnSale && "text-destructive font-medium")}>
               {formatPrice(price)}

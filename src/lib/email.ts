@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { Resend } from "resend";
 import { render } from "@react-email/render";
 import { OrderConfirmation } from "@/emails/OrderConfirmation";
@@ -22,7 +23,7 @@ export async function sendEmail({ to, subject, html }: SendEmailParams) {
   });
 
   if (error) {
-    console.error("Email send error:", error);
+    logger.error("Email send error:", error);
     throw error;
   }
 

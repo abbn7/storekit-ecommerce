@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 "use client";
 
 import { useState } from "react";
@@ -9,24 +10,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FadeIn } from "@/lib/motion";
+import { Tag, Calendar } from "lucide-react";
+import { calculateEstimatedDelivery } from "@/lib/delivery";
 
 const COUNTRIES = Object.entries(COUNTRY_NAMES).map(([code, name]) => ({ code, name }));
 
 export default function CheckoutPage() {
   const { userId } = useAuth(); // C2 FIX: Get Clerk user ID
-  const { items, getSubtotal, clearCart } = useCartStore();
+  const { items, getSubtotal, clearCart, discount, getDiscountAmount } = useCartStore();
   const { config } = useStoreConfig(); // H6 FIX: Fetch store config for estimates
   const subtotal = getSubtotal();
+  const discountAmount = getDiscountAmount();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const delivery = calculateEstimatedDelivery();
 
   // H6 FIX: Calculate estimated shipping and tax using snake_case StoreConfig fields
-  const shippingCost = config?.freeShippingThreshold && subtotal >= config.freeShippingThreshold
+  const discountedSubtotal = Math.max(0, subtotal - discountAmount);
+  const shippingCost = config?.freeShippingThreshold && discountedSubtotal >= config.freeShippingThreshold
     ? 0
     : (config?.shippingCost ?? 0);
+  const effectiveShipping = discount?.type === "free_shipping" ? 0 : shippingCost;
   const taxRate = config ? parseFloat(config.taxRate) : 0;
-  const estimatedTax = Math.round(subtotal * taxRate);
-  const estimatedTotal = subtotal + shippingCost + estimatedTax;
+  const estimatedTax = Math.round(discountedSubtotal * taxRate);
+  const estimatedTotal = discountedSubtotal + effectiveShipping + estimatedTax;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -41,6 +48,7 @@ export default function CheckoutPage() {
         variantId: item.variant_id ?? undefined,
         quantity: item.quantity,
       })),
+      discountCode: discount?.code ?? undefined,
       email: formData.get("email") as string,
       firstName: formData.get("firstName") as string,
       lastName: formData.get("lastName") as string,
@@ -76,7 +84,7 @@ export default function CheckoutPage() {
         window.location.href = data.data.checkoutUrl;
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
@@ -189,13 +197,27 @@ export default function CheckoutPage() {
                   <span>Subtotal</span>
                   <span>{formatPrice(subtotal)}</span>
                 </div>
+                {discount && discountAmount > 0 && (
+                  <div className="flex justify-between text-sm text-emerald-600">
+                    <span className="flex items-center gap-1">
+                      <Tag className="h-3 w-3" />
+                      Discount ({discount.code})
+                    </span>
+                    <span>-{formatPrice(discountAmount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span>Shipping</span>
-                  <span>{shippingCost === 0 ? "Free" : formatPrice(shippingCost)}</span>
+                  <span>{effectiveShipping === 0 ? "Free" : formatPrice(effectiveShipping)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Tax</span>
                   <span>{formatPrice(estimatedTax)}</span>
+                </div>
+                {/* Estimated Delivery */}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg px-3 py-2 mt-2">
+                  <Calendar className="h-4 w-4 text-accent flex-shrink-0" />
+                  <span>Estimated delivery: <span className="text-foreground font-medium">{delivery.rangeLabel}</span></span>
                 </div>
                 {/* H6 FIX: Show estimated total including shipping and tax */}
                 <div className="flex justify-between font-medium text-lg pt-2">

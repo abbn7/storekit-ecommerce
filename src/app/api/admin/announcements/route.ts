@@ -1,3 +1,4 @@
+﻿import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { getAnnouncements, createAnnouncement } from "@/lib/db/queries/store";
@@ -13,7 +14,7 @@ export async function GET() {
     const announcementsList = await getAnnouncements();
     return apiResponse(announcementsList);
   } catch (error) {
-    console.error("Error fetching announcements:", error);
+    logger.error("Error fetching announcements:", error);
     return apiError("Failed to fetch announcements", 500);
   }
 }
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
     const announcement = await createAnnouncement(parsed.data);
     return apiResponse(announcement, undefined, 201);
   } catch (error) {
-    console.error("Error creating announcement:", error);
+    logger.error("Error creating announcement:", error);
     return apiError("Failed to create announcement", 500);
   }
 }

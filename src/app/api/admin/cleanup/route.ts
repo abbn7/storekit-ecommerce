@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { loginAttempts, processedWebhookEvents } from "@/lib/db/schema";
 import { lt } from "drizzle-orm";
 import { apiResponse, apiError } from "@/lib/api-response";
+import { logger } from "@/lib/logger";
 
 
 // M11 FIX: Cron cleanup endpoint for stale login attempts and processed webhook events
@@ -13,11 +14,18 @@ export async function GET(request: NextRequest) {
     // Verify this is called by an authorized source (Vercel Cron or admin)
     const isAuth = await verifyAdminSession();
     if (!isAuth) {
-      // Also allow Vercel cron calls via CRON_SECRET header
-      const providedSecret = request.headers.get("x-cron-secret");
+      // NEW-M8 FIX: Also accept Vercel cron via Authorization: Bearer CRON_SECRET header
+      // Vercel crons automatically send this header when CRON_SECRET is configured
+      const authHeader = request.headers.get("authorization");
+      const cronSecret = request.headers.get("x-cron-secret");
       const expectedSecret = process.env.CRON_SECRET;
-      
-      if (!expectedSecret || providedSecret !== expectedSecret) {
+
+      const isValidCron = expectedSecret && (
+        authHeader === `Bearer ${expectedSecret}` ||
+        cronSecret === expectedSecret
+      );
+
+      if (!isValidCron) {
         return apiError("Unauthorized", 401);
       }
     }
@@ -33,7 +41,7 @@ export async function GET(request: NextRequest) {
 
     return apiResponse({ success: true, message: "Cleanup completed" });
   } catch (error) {
-    console.error("Cleanup error:", error);
+    logger.error("Cleanup error:", error);
     return apiError("Cleanup failed", 500);
   }
 }

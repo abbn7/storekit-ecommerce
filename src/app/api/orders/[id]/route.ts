@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { getOrderById, getOrderByStripeSession } from "@/lib/db/queries/orders";
 import { verifyAdminSession } from "@/lib/admin-auth";
@@ -34,7 +35,7 @@ export async function GET(
 
     return apiResponse(order);
   } catch (error) {
-    console.error("Error fetching order:", error);
+    logger.error("Error fetching order:", error);
     return apiError("Failed to fetch order", 500);
   }
 }

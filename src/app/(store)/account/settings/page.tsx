@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 "use client";
 
 import { useState } from "react";
@@ -36,7 +37,7 @@ export default function AccountSettingsPage() {
 
       setSaved(true);
     } catch (err) {
-      console.error("Failed to update settings:", err);
+      logger.error("Failed to update settings:", err);
       setError("Failed to save settings. Please try again.");
     } finally {
       setLoading(false);

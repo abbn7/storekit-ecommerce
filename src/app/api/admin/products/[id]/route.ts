@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { getProductById, updateProduct, deleteProduct } from "@/lib/db/queries/products";
@@ -18,7 +19,7 @@ export async function GET(
     if (!product) return apiError("Product not found", 404);
     return apiResponse(product);
   } catch (error) {
-    console.error("Error fetching product:", error);
+    logger.error("Error fetching product:", error);
     return apiError("Failed to fetch product", 500);
   }
 }
@@ -43,7 +44,7 @@ export async function PATCH(
     if (!product) return apiError("Product not found", 404);
     return apiResponse(product);
   } catch (error) {
-    console.error("Error updating product:", error);
+    logger.error("Error updating product:", error);
     return apiError("Failed to update product", 500);
   }
 }
@@ -62,7 +63,7 @@ export async function DELETE(
     if (!deleted) return apiError("Product not found", 404);
     return apiResponse({ success: true });
   } catch (error) {
-    console.error("Error deleting product:", error);
+    logger.error("Error deleting product:", error);
     return apiError("Failed to delete product", 500);
   }
 }

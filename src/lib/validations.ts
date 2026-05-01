@@ -9,16 +9,20 @@ export function stripHtml(input: string): string {
 }
 
 // Sanitize HTML: remove dangerous tags and attributes (for rich text fields)
-const DANGEROUS_TAGS = /<(script|style|iframe|object|embed|form|input|textarea|button|link|meta)[\s\S]*?>[\s\S]*?<\/\1>/gi;
+// NEW-M4: Added svg, img, video, audio, source, base, area, map to dangerous tags
+// These tags can execute JS via event handlers or src attributes
+const DANGEROUS_TAGS = /<(script|style|iframe|object|embed|form|input|textarea|button|link|meta|svg|img|video|audio|source|base|area|map)[\s\S]*?>[\s\S]*?<\/\1>|<(script|style|iframe|object|embed|form|input|textarea|button|link|meta|svg|img|video|audio|source|base|area|map)[^>]*\/?>/gi;
 const EVENT_HANDLERS = /\s*on\w+\s*=\s*["'][^"']*["']/gi;
 const JS_URLS = /javascript:/gi;
+const DATA_URLS = /data:text\/html/gi;
 
 export function sanitizeHtml(input: string): string {
   if (!input) return input;
   return input
     .replace(DANGEROUS_TAGS, "")
     .replace(EVENT_HANDLERS, "")
-    .replace(JS_URLS, "");
+    .replace(JS_URLS, "")
+    .replace(DATA_URLS, ""); // NEW-M4: Block data:text/html URLs
 }
 
 // ─── Product ─────────────────────────────────────────

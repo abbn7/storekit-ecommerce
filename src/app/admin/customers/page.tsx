@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 "use client";
 
 import { useEffect, useState } from "react";
@@ -25,7 +26,7 @@ export default function AdminCustomersPage() {
         setLoading(false);
       })
       .catch((err) => {
-        console.error(err);
+        logger.error(err);
         setLoading(false);
       });
   }, []);

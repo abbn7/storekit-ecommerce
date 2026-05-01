@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { updateBanner, deleteBanner } from "@/lib/db/queries/store";
@@ -25,7 +26,7 @@ export async function PATCH(
     if (!banner) return apiError("Banner not found", 404);
     return apiResponse(banner);
   } catch (error) {
-    console.error("Error updating banner:", error);
+    logger.error("Error updating banner:", error);
     return apiError("Failed to update banner", 500);
   }
 }
@@ -44,7 +45,7 @@ export async function DELETE(
     if (!deleted) return apiError("Banner not found", 404);
     return apiResponse({ success: true });
   } catch (error) {
-    console.error("Error deleting banner:", error);
+    logger.error("Error deleting banner:", error);
     return apiError("Failed to delete banner", 500);
   }
 }

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { getCollectionById, updateCollection, deleteCollection } from "@/lib/db/queries/collections";
@@ -18,7 +19,7 @@ export async function GET(
     if (!collection) return apiError("Collection not found", 404);
     return apiResponse(collection);
   } catch (error) {
-    console.error("Error fetching collection:", error);
+    logger.error("Error fetching collection:", error);
     return apiError("Failed to fetch collection", 500);
   }
 }
@@ -43,7 +44,7 @@ export async function PATCH(
     if (!collection) return apiError("Collection not found", 404);
     return apiResponse(collection);
   } catch (error) {
-    console.error("Error updating collection:", error);
+    logger.error("Error updating collection:", error);
     return apiError("Failed to update collection", 500);
   }
 }
@@ -62,7 +63,7 @@ export async function DELETE(
     if (!deleted) return apiError("Collection not found", 404);
     return apiResponse({ success: true });
   } catch (error) {
-    console.error("Error deleting collection:", error);
+    logger.error("Error deleting collection:", error);
     return apiError("Failed to delete collection", 500);
   }
 }

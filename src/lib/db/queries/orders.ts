@@ -1,6 +1,6 @@
 import { eq, desc, count, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { orders, orderItems, productVariants } from "@/lib/db/schema";
+import { orders, orderItems, productVariants, products } from "@/lib/db/schema";
 
 export async function getOrders(page: number = 1, limit: number = 20, status?: string) {
   const offset = (page - 1) * limit;
@@ -97,6 +97,7 @@ export async function deleteOrder(id: string) {
 }
 
 // CRITICAL FIX: Restore stock for all items in an order (used when payment fails or order is cancelled)
+// NEW-M7: Also restores product stock for items without variants
 export async function restoreStock(orderId: string) {
   const items = await db
     .select()
@@ -109,6 +110,12 @@ export async function restoreStock(orderId: string) {
         .update(productVariants)
         .set({ stock: sql`${productVariants.stock} + ${item.quantity}` })
         .where(eq(productVariants.id, item.variantId));
+    } else if (item.productId) {
+      // NEW-M7: Restore product stock for products without variants
+      await db
+        .update(products)
+        .set({ stock: sql`${products.stock} + ${item.quantity}` })
+        .where(eq(products.id, item.productId));
     }
   }
 }

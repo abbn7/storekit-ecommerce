@@ -1,3 +1,4 @@
+﻿import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { loginAdmin, logoutAdmin, checkRateLimit, verifyAdminSession } from "@/lib/admin-auth";
 import { apiResponse, apiError } from "@/lib/api-response";
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
     return apiResponse({ success: true });
   } catch (error) {
-    console.error("Admin login error:", error);
+    logger.error("Admin login error:", error);
     return apiError("Login failed", 500);
   }
 }
@@ -49,7 +50,7 @@ export async function GET() {
     if (!isAuth) return apiError("Not authenticated", 401);
     return apiResponse({ authenticated: true });
   } catch (error) {
-    console.error("Admin auth check error:", error);
+    logger.error("Admin auth check error:", error);
     return apiError("Auth check failed", 500);
   }
 }
@@ -59,7 +60,7 @@ export async function DELETE() {
     await logoutAdmin();
     return apiResponse({ success: true });
   } catch (error) {
-    console.error("Admin logout error:", error);
+    logger.error("Admin logout error:", error);
     return apiError("Logout failed", 500);
   }
 }

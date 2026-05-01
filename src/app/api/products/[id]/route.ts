@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { getProductBySlug, getProductById } from "@/lib/db/queries/products";
 import { verifyAdminSession } from "@/lib/admin-auth";
@@ -29,7 +30,7 @@ export async function GET(
     }
     return apiResponse(adminProduct);
   } catch (error) {
-    console.error("Error fetching product:", error);
+    logger.error("Error fetching product:", error);
     return apiError("Failed to fetch product", 500);
   }
 }

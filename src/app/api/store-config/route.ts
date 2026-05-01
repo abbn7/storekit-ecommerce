@@ -1,3 +1,4 @@
+﻿import { logger } from "@/lib/logger";
 import { getStoreConfig } from "@/lib/db/queries/store";
 import { apiResponse, apiError } from "@/lib/api-response";
 
@@ -26,7 +27,7 @@ export async function GET() {
 
     return apiResponse(publicConfig);
   } catch (error) {
-    console.error("Error fetching store config:", error);
+    logger.error("Error fetching store config:", error);
     return apiError("Failed to fetch store configuration", 500);
   }
 }

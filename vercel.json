@@ -26,6 +26,10 @@
         {
           "key": "X-DNS-Prefetch-Control",
           "value": "on"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://img.clerk.com https://lh3.googleusercontent.com; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com https://js.stripe.com https://hooks.stripe.com; connect-src 'self' https://api.stripe.com https://api.clerk.com https://clerk.storekit.dev https://res.cloudinary.com; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
         }
       ]
     },
@@ -42,7 +46,10 @@
   "crons": [
     {
       "path": "/api/admin/cleanup",
-      "schedule": "0 3 * * *"
+      "schedule": "0 3 * * *",
+      "headers": {
+        "Authorization": "Bearer ${CRON_SECRET}"
+      }
     }
   ]
 }

@@ -1,3 +1,4 @@
+﻿import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { clerkClient } from "@clerk/nextjs/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
@@ -55,7 +56,7 @@ export async function GET(_request: NextRequest) {
 
     return apiResponse(customers);
   } catch (error) {
-    console.error("Error fetching customers:", error);
+    logger.error("Error fetching customers:", error);
     return apiError("Failed to fetch customers", 500);
   }
 }

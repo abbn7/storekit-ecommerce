@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Heart, Minus, Plus, ShoppingBag } from "lucide-react";
+import { Heart, Minus, Plus, ShoppingBag, Calendar, Truck } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/stores/cartStore";
@@ -9,6 +9,7 @@ import { useWishlistStore } from "@/stores/wishlistStore";
 import { useUIStore } from "@/stores/uiStore";
 import { formatPrice, cn } from "@/lib/utils";
 import { FadeIn, hoverScale } from "@/lib/motion";
+import { calculateEstimatedDelivery } from "@/lib/delivery";
 
 interface VariantOption {
   id: string;
@@ -187,6 +188,12 @@ export function AddToCartSection({
         {activeMaxStock < 10 && (
           <span className="text-xs text-muted-foreground">Only {activeMaxStock} left</span>
         )}
+
+        {/* Estimated Delivery */}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Truck className="h-4 w-4 text-accent flex-shrink-0" />
+          <span>Estimated delivery: <span className="text-foreground font-medium">{calculateEstimatedDelivery().rangeLabel}</span></span>
+        </div>
       </div>
 
       {/* Actions */}

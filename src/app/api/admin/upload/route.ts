@@ -1,3 +1,4 @@
+﻿import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { uploadImage } from "@/lib/cloudinary";
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
     const result = await uploadImage(file, folder);
     return apiResponse(result, undefined, 201);
   } catch (error) {
-    console.error("Upload error:", error);
+    logger.error("Upload error:", error);
     return apiError("Failed to upload image", 500);
   }
 }

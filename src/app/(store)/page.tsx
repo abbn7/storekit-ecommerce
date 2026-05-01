@@ -7,6 +7,7 @@ import { FeaturedCollections } from "@/components/store/FeaturedCollections";
 import { MarqueeSection } from "@/components/store/MarqueeSection";
 import { NewArrivals } from "@/components/store/NewArrivals";
 import { TestimonialsSection } from "@/components/store/TestimonialsSection";
+import { NewsletterSubscription } from "@/components/store/NewsletterSubscription";
 
 export const metadata: Metadata = {
   title: "Home",
@@ -22,7 +23,27 @@ export default async function HomePage() {
     getActiveTestimonials().catch(() => []),
   ]);
 
-  const heroBanner = heroBanners[0];
+  // Map hero banners to the new HeroSection props format
+  const mappedHeroBanners = heroBanners.length > 0
+    ? heroBanners.map((b) => ({
+        id: b.id,
+        title: b.title,
+        subtitle: b.subtitle,
+        imageUrl: b.imageUrl,
+        ctaText: b.linkUrl ? (b.title ? "Shop Now" : undefined) : undefined,
+        ctaLink: b.linkUrl,
+      }))
+    : [
+        // Fallback when no banners exist in DB
+        {
+          title: "The New Collection",
+          subtitle: "Timeless pieces crafted with intention",
+          imageUrl:
+            "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&h=1080&fit=crop",
+          ctaText: "Shop Now" as const,
+          ctaLink: "/collections" as const,
+        },
+      ];
 
   // Map DB camelCase results to component snake_case props
   const mappedCollections = collections.map((c) => ({
@@ -58,19 +79,14 @@ export default async function HomePage() {
 
   return (
     <>
-      <HeroSection
-        title={heroBanner?.title}
-        subtitle={heroBanner?.subtitle ?? undefined}
-        imageUrl={heroBanner?.imageUrl}
-        ctaText={heroBanner?.linkUrl ? "Shop Now" : undefined}
-        ctaLink={heroBanner?.linkUrl ?? undefined}
-      />
+      <HeroSection banners={mappedHeroBanners} />
       <FeaturedCollections collections={mappedCollections} />
       <MarqueeSection />
       {mappedNewArrivals.length > 0 && (
         <NewArrivals products={mappedNewArrivals} />
       )}
       <TestimonialsSection testimonials={mappedTestimonials} />
+      <NewsletterSubscription variant="section" className="py-16" />
     </>
   );
 }

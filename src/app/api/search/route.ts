@@ -1,33 +1,26 @@
 import { NextRequest } from "next/server";
 import { getProducts } from "@/lib/db/queries/products";
 import { apiResponse, apiError } from "@/lib/api-response";
+import { checkRateLimit } from "@/lib/admin-auth";
+import { logger } from "@/lib/logger";
 
-// Simple in-memory rate limit for search API
-const searchRateLimit = new Map<string, { count: number; resetAt: number }>();
-const SEARCH_RATE_LIMIT = 30; // requests per window
-const SEARCH_RATE_WINDOW_MS = 60 * 1000; // 1 minute
-
+// NEW-M5: Use DB-backed rate limiting instead of in-memory Map
+// In-memory rate limiting doesn't work in serverless (Vercel) environments
 export async function GET(request: NextRequest) {
   try {
-    // Rate limiting
+    // Rate limiting using DB-backed approach (works across serverless instances)
+    const forwardedFor = request.headers.get("x-forwarded-for");
     const ip = request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim()
       || request.headers.get("x-real-ip")
+      || (forwardedFor ? forwardedFor.split(",").pop()?.trim() : undefined)
       || "unknown";
-    const now = Date.now();
-    const record = searchRateLimit.get(ip);
-    if (!record || now > record.resetAt) {
-      searchRateLimit.set(ip, { count: 1, resetAt: now + SEARCH_RATE_WINDOW_MS });
-    } else if (record.count >= SEARCH_RATE_LIMIT) {
-      return apiError("Too many search requests. Please try again later.", 429);
-    } else {
-      record.count++;
-    }
 
-    // Clean up old entries periodically (prevent memory leak)
-    if (searchRateLimit.size > 1000) {
-      for (const [key, val] of searchRateLimit) {
-        if (now > val.resetAt) searchRateLimit.delete(key);
-      }
+    const rateCheck = await checkRateLimit(ip);
+    if (!rateCheck.allowed) {
+      return apiError(
+        `Too many search requests. Try again in ${Math.ceil(rateCheck.remainingMs / 1000)} seconds.`,
+        429
+      );
     }
 
     const searchParams = request.nextUrl.searchParams;
@@ -44,7 +37,7 @@ export async function GET(request: NextRequest) {
     const results = await getProducts({ search: trimmedQuery, limit });
     return apiResponse(results);
   } catch (error) {
-    console.error("Error searching products:", error);
+    logger.error("Error searching products:", error);
     return apiError("Failed to search products", 500);
   }
 }

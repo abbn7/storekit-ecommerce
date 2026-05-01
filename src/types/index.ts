@@ -1,6 +1,6 @@
-export type { Product, ProductImage, ProductVariant, ProductWithRelations, ProductMinimal, ProductFilters, CollectionMinimal } from "./product";
+export type { Product, ProductImage, ProductVariant, ProductWithRelations, ProductMinimal, ProductFilters, CollectionMinimal, Review, ReviewStats, ReviewWithStats } from "./product";
 export type { Collection, CollectionWithProducts } from "./collection";
-export type { Order, OrderItem, OrderWithItems, OrderStatus } from "./order";
+export type { Order, OrderItem, OrderWithItems, OrderStatus, DiscountCode, DiscountType, DiscountValidation } from "./order";
 export type { StoreConfig, StoreTheme, SocialLinks, Announcement, Banner, Testimonial } from "./store";
 export type { CartItem, CartWithTotals } from "./cart";
 export type { User, Address } from "./user";

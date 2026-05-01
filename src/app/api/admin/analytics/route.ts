@@ -1,3 +1,4 @@
+﻿import { logger } from "@/lib/logger";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { getSalesData, getTopProducts, getOrderStats, getProductsCount } from "@/lib/db/queries/analytics";
 import { apiResponse, apiError } from "@/lib/api-response";
@@ -31,7 +32,7 @@ export async function GET() {
       topProducts,
     });
   } catch (error) {
-    console.error("Error fetching analytics:", error);
+    logger.error("Error fetching analytics:", error);
     return apiError("Failed to fetch analytics", 500);
   }
 }

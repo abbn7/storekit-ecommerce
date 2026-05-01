@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Star } from "lucide-react";
+import { Star, Quote } from "lucide-react";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/lib/motion";
 
 interface TestimonialsSectionProps {
@@ -46,18 +46,33 @@ export function TestimonialsSection({ testimonials }: TestimonialsSectionProps) 
   const items = testimonials?.length ? testimonials : defaultTestimonials;
 
   return (
-    <section className="py-20 lg:py-28">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className="py-20 lg:py-28 relative overflow-hidden">
+      {/* Subtle decorative background */}
+      <div className="absolute inset-0 opacity-[0.03]" aria-hidden="true">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[20rem] font-heading leading-none select-none pointer-events-none">
+          &ldquo;
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
         <FadeIn>
-          <h2 className="font-heading text-3xl sm:text-4xl font-light tracking-wide text-center mb-16">
-            What Our Clients Say
-          </h2>
+          <div className="text-center mb-16">
+            <span className="text-xs tracking-[0.2em] uppercase text-muted-foreground mb-3 block">
+              Testimonials
+            </span>
+            <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-light tracking-wide">
+              What Our Clients Say
+            </h2>
+          </div>
         </FadeIn>
 
         <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
           {items.map((testimonial) => (
             <StaggerItem key={testimonial.id}>
-              <div className="glass-panel rounded-2xl p-8 text-center h-full">
+              <div className="glass-panel-strong rounded-2xl p-8 text-center h-full transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                {/* Quote icon */}
+                <Quote className="h-8 w-8 text-accent/30 mx-auto mb-4" />
+
                 {/* Stars */}
                 <div className="flex items-center justify-center gap-1 mb-6">
                   {Array.from({ length: testimonial.rating }).map((_, i) => (
@@ -66,14 +81,14 @@ export function TestimonialsSection({ testimonials }: TestimonialsSectionProps) 
                 </div>
 
                 {/* Quote */}
-                <blockquote className="font-heading text-xl sm:text-2xl font-light leading-relaxed mb-6">
+                <blockquote className="font-heading text-xl sm:text-2xl font-light leading-relaxed mb-8">
                   &ldquo;{testimonial.content}&rdquo;
                 </blockquote>
 
                 {/* Author */}
                 <div className="flex items-center justify-center gap-3">
                   {testimonial.avatar_url ? (
-                    <div className="relative h-10 w-10 rounded-full overflow-hidden">
+                    <div className="relative h-10 w-10 rounded-full overflow-hidden ring-2 ring-accent/20">
                       <Image
                         src={testimonial.avatar_url}
                         alt={testimonial.author_name}
@@ -82,7 +97,7 @@ export function TestimonialsSection({ testimonials }: TestimonialsSectionProps) 
                       />
                     </div>
                   ) : (
-                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-sm font-medium accent-gradient-text">
+                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-sm font-medium accent-gradient-text ring-2 ring-accent/20">
                       {testimonial.author_name.charAt(0)}
                     </div>
                   )}

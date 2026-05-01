@@ -9,8 +9,13 @@ const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 60 * 1000; // 1 minute
 
+// NEW-L6: Removed hardcoded fallback secret — throw if no secret is configured
 function getHmacSecret(): string {
-  return process.env.ADMIN_SECRET || process.env.ADMIN_PASSWORD || "fallback-secret-change-me";
+  const secret = process.env.ADMIN_SECRET || process.env.ADMIN_PASSWORD;
+  if (!secret) {
+    throw new Error("ADMIN_SECRET or ADMIN_PASSWORD must be configured");
+  }
+  return secret;
 }
 
 async function createToken(password: string): Promise<string> {
