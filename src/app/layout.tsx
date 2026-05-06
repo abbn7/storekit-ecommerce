@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Inter, Bebas_Neue } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -40,16 +41,23 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body
-          className={`${cormorant.variable} ${inter.variable} ${bebas.variable} font-body antialiased`}
-        >
-          <TooltipProvider>
-            {children}
-          </TooltipProvider>
-          <Toaster position="bottom-right" richColors />
-        </body>
-      </html>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="light"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <html lang="en" suppressHydrationWarning>
+          <body
+            className={`${cormorant.variable} ${inter.variable} ${bebas.variable} font-body antialiased`}
+          >
+            <TooltipProvider>
+              {children}
+            </TooltipProvider>
+            <Toaster position="bottom-right" richColors />
+          </body>
+        </html>
+      </ThemeProvider>
     </ClerkProvider>
   );
 }

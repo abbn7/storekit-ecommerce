@@ -1,5 +1,5 @@
-import { logger } from "@/lib/logger";
 "use client";
+import { logger } from "@/lib/logger";
 
 import { useReducer, useEffect } from "react";
 import type { StoreConfig } from "@/types";

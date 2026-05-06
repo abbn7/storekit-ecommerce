@@ -118,3 +118,49 @@ export const updateTestimonialSchema = createTestimonialSchema.partial();
 // ─── Upload ──────────────────────────────────────────
 export const MAX_UPLOAD_SIZE = 5 * 1024 * 1024; // 5MB
 export const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+// Magic number signatures for allowed image types (first bytes of file)
+const FILE_SIGNATURES: Record<string, number[][]> = {
+  "image/jpeg": [[0xff, 0xd8, 0xff]],
+  "image/png": [[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]],
+  "image/gif": [[0x47, 0x49, 0x46, 0x38, 0x37, 0x61], [0x47, 0x49, 0x46, 0x38, 0x39, 0x61]], // GIF87a or GIF89a
+  "image/webp": [[0x52, 0x49, 0x46, 0x46]], // RIFF...WEBP (check RIFF header + WEBP at offset 8)
+};
+
+/**
+ * Validate that a file's actual content matches its declared MIME type
+ * by checking magic number signatures. This prevents MIME type spoofing
+ * where an attacker sets file.type to an allowed value but uploads malicious content.
+ */
+export async function validateFileSignature(file: File): Promise<{ valid: boolean; detectedType?: string }> {
+  const buffer = await file.slice(0, 16).arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+
+  for (const [mimeType, signatures] of Object.entries(FILE_SIGNATURES)) {
+    for (const sig of signatures) {
+      if (sig.length <= bytes.length) {
+        let match = true;
+        for (let i = 0; i < sig.length; i++) {
+          if (bytes[i] !== sig[i]) {
+            match = false;
+            break;
+          }
+        }
+        if (match) {
+          // For WebP, also verify "WEBP" at offset 8
+          if (mimeType === "image/webp") {
+            if (bytes.length >= 12 &&
+                bytes[8] === 0x57 && bytes[9] === 0x45 &&
+                bytes[10] === 0x42 && bytes[11] === 0x50) {
+              return { valid: file.type === mimeType, detectedType: mimeType };
+            }
+            continue;
+          }
+          return { valid: file.type === mimeType, detectedType: mimeType };
+        }
+      }
+    }
+  }
+
+  return { valid: false };
+}

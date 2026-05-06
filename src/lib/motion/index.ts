@@ -3,6 +3,7 @@ export { FadeIn } from "./FadeIn";
 export { StaggerContainer } from "./StaggerContainer";
 export { StaggerItem } from "./StaggerItem";
 export { PageTransition } from "./PageTransition";
+export { ScrollReveal } from "./ScrollReveal";
 
 export {
   // Easing & duration

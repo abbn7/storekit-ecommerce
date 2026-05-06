@@ -1,11 +1,13 @@
 import type { NextConfig } from "next";
 
-// L10 NOTE: serverActions is stable in Next.js 16 but TypeScript types
-// still require it under experimental. Will move to top-level when types catch up.
+// Restrict server action origins to specific production domain + localhost
+// Previously "*.vercel.app" allowed ANY Vercel subdomain — security risk
+const productionDomain = process.env.VERCEL_URL ? [process.env.VERCEL_URL] : [];
+
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
-      allowedOrigins: ["*.vercel.app", "localhost:3000"],
+      allowedOrigins: [...productionDomain, "localhost:3000"],
     },
   },
   images: {

@@ -19,8 +19,8 @@ export async function GET(
   try {
     const { id: productId } = await params;
     const searchParams = request.nextUrl.searchParams;
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    const limit = parseInt(searchParams.get("limit") || "10", 10);
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "10", 10)));
 
     const result = await getProductReviews(productId, page, limit);
     return apiResponse(result);

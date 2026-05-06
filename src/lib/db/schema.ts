@@ -33,6 +33,9 @@ export const storeConfig = pgTable("store_config", {
 // ─── Discount Type Enum (NEW-L4) ──────────────────────
 export const discountTypeEnum = pgEnum("discount_type", ["percentage", "fixed", "free_shipping"]);
 
+// ─── Order Status Enum ─────────────────────────────────
+export const orderStatusEnum = pgEnum("order_status", ["pending", "processing", "shipped", "delivered", "cancelled", "refunded"]);
+
 // ─── Products ─────────────────────────────────────────
 export const products = pgTable("products", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -162,6 +165,8 @@ export const banners = pgTable("banners", {
   position: varchar("position", { length: 50 }).notNull().default("hero"),
   isActive: boolean("is_active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const announcements = pgTable("announcements", {
@@ -170,6 +175,8 @@ export const announcements = pgTable("announcements", {
   linkUrl: text("link_url"),
   isActive: boolean("is_active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const testimonials = pgTable("testimonials", {
@@ -181,6 +188,8 @@ export const testimonials = pgTable("testimonials", {
   rating: integer("rating").notNull().default(5),
   isActive: boolean("is_active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // ─── Security ─────────────────────────────────────────

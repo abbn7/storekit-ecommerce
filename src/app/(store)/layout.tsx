@@ -7,6 +7,7 @@ import { SearchOverlay } from "@/components/store/SearchOverlay";
 import { BackToTop } from "@/components/store/BackToTop";
 import { CookieConsent } from "@/components/store/CookieConsent";
 import { MobileBottomNav } from "@/components/store/MobileBottomNav";
+import { PageTransition } from "@/lib/motion";
 import { getStoreConfig } from "@/lib/db/queries/store";
 
 export default async function StoreLayout({
@@ -30,7 +31,9 @@ export default async function StoreLayout({
       <MobileMenu />
       <CartDrawer />
       <SearchOverlay />
-      <main id="main-content" className="min-h-screen">{children}</main>
+      <main id="main-content" className="min-h-screen">
+        <PageTransition>{children}</PageTransition>
+      </main>
       <Footer socialLinks={config?.socialLinks as Record<string, string> | null | undefined} storeName={config?.name} logoUrl={config?.logoUrl} />
       <BackToTop />
       <CookieConsent />

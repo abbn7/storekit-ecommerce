@@ -2,8 +2,14 @@ import { eq, desc, count, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { orders, orderItems, productVariants, products } from "@/lib/db/schema";
 
+// MEDIUM-2 FIX: Typed order status values matching the validation schema
+export const ORDER_STATUSES = ["pending", "processing", "shipped", "delivered", "cancelled", "refunded"] as const;
+export type OrderStatus = typeof ORDER_STATUSES[number];
+
 export async function getOrders(page: number = 1, limit: number = 20, status?: string) {
-  const offset = (page - 1) * limit;
+  const safeLimit = Math.min(100, Math.max(1, limit));
+  const safePage = Math.max(1, page);
+  const offset = (safePage - 1) * safeLimit;
 
   const conditions = status ? eq(orders.status, status) : undefined;
 
@@ -12,7 +18,7 @@ export async function getOrders(page: number = 1, limit: number = 20, status?: s
     .from(orders)
     .where(conditions)
     .orderBy(desc(orders.createdAt))
-    .limit(limit)
+    .limit(safeLimit)
     .offset(offset);
 
   return result;
@@ -67,7 +73,8 @@ export async function createOrderItem(data: typeof orderItems.$inferInsert) {
 }
 
 // H1 FIX: Return null when order not found instead of undefined
-export async function updateOrderStatus(id: string, status: string) {
+// MEDIUM-2 FIX: Use typed OrderStatus instead of bare string
+export async function updateOrderStatus(id: string, status: OrderStatus) {
   const [order] = await db
     .update(orders)
     .set({ status, updatedAt: new Date() })

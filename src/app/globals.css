@@ -5,37 +5,41 @@
 
 /* ─── Luxury Theme Variables ─────────────────────────── */
 :root {
-  /* Brand */
-  --brand: 0 0% 4%;
-  --brand-foreground: 0 0% 98%;
+  /* Brand — Deep Charcoal with warm undertone */
+  --brand: 20 14% 4%;
+  --brand-foreground: 40 20% 98%;
 
   /* Accent — Rich Gold */
   --accent: 40 60% 50%;
-  --accent-foreground: 0 0% 4%;
+  --accent-foreground: 20 14% 4%;
 
-  /* Accent Gradient */
-  --accent-gradient-from: 35 70% 55%;
-  --accent-gradient-to: 45 55% 45%;
+  /* Accent Gradient — Warm champagne to deep gold */
+  --accent-gradient-from: 35 75% 58%;
+  --accent-gradient-to: 28 50% 38%;
 
-  /* Surfaces — 4-level elevation */
-  --surface-1: 0 0% 100%;
-  --surface-2: 0 0% 98%;
-  --surface-3: 0 0% 94%;
-  --surface-4: 0 0% 100%;
+  /* Secondary Accent — Rose Gold for highlights */
+  --accent-secondary: 12 40% 60%;
+  --accent-secondary-foreground: 20 14% 4%;
 
-  /* Text — 3-level hierarchy */
-  --text-primary: 0 0% 4%;
-  --text-secondary: 0 0% 40%;
-  --text-muted: 0 0% 64%;
+  /* Surfaces — 4-level elevation with warm undertone */
+  --surface-1: 40 20% 100%;
+  --surface-2: 40 20% 98%;
+  --surface-3: 30 10% 94%;
+  --surface-4: 40 20% 100%;
 
-  /* Borders */
-  --border: 0 0% 90%;
-  --input: 0 0% 90%;
-  --ring: 0 0% 4%;
+  /* Text — 3-level hierarchy with warm undertone */
+  --text-primary: 20 14% 4%;
+  --text-secondary: 20 10% 40%;
+  --text-muted: 20 8% 64%;
+
+  /* Borders — warm tinted */
+  --border: 30 10% 90%;
+  --input: 30 10% 90%;
+  --ring: 20 14% 4%;
 
   /* Status */
   --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 98%;
+  --destructive-foreground: 40 20% 98%;
   --success: 142 76% 36%;
   --warning: 38 92% 50%;
 
@@ -101,65 +105,68 @@
 }
 
 .dark {
-  --brand: 0 0% 98%;
-  --brand-foreground: 0 0% 4%;
+  --brand: 40 20% 98%;
+  --brand-foreground: 20 14% 4%;
 
   --accent: 40 60% 60%;
-  --accent-foreground: 0 0% 98%;
+  --accent-foreground: 20 14% 4%;
 
-  --accent-gradient-from: 35 70% 60%;
-  --accent-gradient-to: 45 55% 50%;
+  --accent-gradient-from: 35 75% 62%;
+  --accent-gradient-to: 28 50% 45%;
 
-  --surface-1: 0 0% 4%;
-  --surface-2: 0 0% 7%;
-  --surface-3: 0 0% 14%;
-  --surface-4: 0 0% 10%;
+  --accent-secondary: 12 40% 65%;
+  --accent-secondary-foreground: 20 14% 4%;
 
-  --text-primary: 0 0% 98%;
-  --text-secondary: 0 0% 64%;
-  --text-muted: 0 0% 40%;
+  --surface-1: 20 14% 4%;
+  --surface-2: 20 10% 7%;
+  --surface-3: 20 8% 14%;
+  --surface-4: 20 12% 10%;
 
-  --border: 0 0% 14%;
-  --input: 0 0% 14%;
-  --ring: 0 0% 98%;
+  --text-primary: 40 20% 98%;
+  --text-secondary: 20 8% 64%;
+  --text-muted: 20 6% 40%;
+
+  --border: 20 8% 14%;
+  --input: 20 8% 14%;
+  --ring: 40 20% 98%;
 
   --destructive: 0 62% 50%;
-  --destructive-foreground: 0 0% 98%;
+  --destructive-foreground: 40 20% 98%;
   --success: 142 76% 36%;
   --warning: 38 92% 50%;
 
-  --sidebar-background: 0 0% 7%;
-  --sidebar-foreground: 0 0% 98%;
-  --sidebar-primary: 0 0% 98%;
-  --sidebar-primary-foreground: 0 0% 4%;
-  --sidebar-accent: 0 0% 14%;
-  --sidebar-accent-foreground: 0 0% 98%;
-  --sidebar-border: 0 0% 14%;
-  --sidebar-ring: 0 0% 98%;
+  --sidebar-background: 20 10% 7%;
+  --sidebar-foreground: 40 20% 98%;
+  --sidebar-primary: 40 20% 98%;
+  --sidebar-primary-foreground: 20 14% 4%;
+  --sidebar-accent: 20 8% 14%;
+  --sidebar-accent-foreground: 40 20% 98%;
+  --sidebar-border: 20 8% 14%;
+  --sidebar-ring: 40 20% 98%;
 
-  --chart-1: 0 0% 98%;
+  --chart-1: 40 20% 98%;
   --chart-2: 40 60% 60%;
-  --chart-3: 0 0% 64%;
-  --chart-4: 0 0% 40%;
-  --chart-5: 0 0% 20%;
+  --chart-3: 20 8% 64%;
+  --chart-4: 20 6% 40%;
+  --chart-5: 20 10% 20%;
 
-  /* Glass — Dark Mode */
-  --glass-bg: 0 0% 7% / 0.7;
+  /* Glass — Dark Mode with warm undertone */
+  --glass-bg: 20 14% 7% / 0.7;
   --glass-blur: 12px;
-  --glass-border: 0 0% 98% / 0.12;
-  --glass-shadow: 0 4px 16px hsl(0 0% 0% / 0.2);
+  --glass-border: 40 20% 98% / 0.12;
+  --glass-shadow: 0 4px 16px hsl(20 14% 0% / 0.2);
 
-  --glass-bg-strong: 0 0% 7% / 0.85;
+  --glass-bg-strong: 20 14% 7% / 0.85;
   --glass-blur-strong: 18px;
-  --glass-border-strong: 0 0% 98% / 0.18;
-  --glass-shadow-strong: 0 14px 40px hsl(0 0% 0% / 0.3);
+  --glass-border-strong: 40 20% 98% / 0.18;
+  --glass-shadow-strong: 0 14px 40px hsl(20 14% 0% / 0.3);
 
-  --glass-bg-heavy: 0 0% 10% / 0.92;
+  --glass-bg-heavy: 20 14% 10% / 0.92;
   --glass-blur-heavy: 24px;
-  --glass-border-heavy: 0 0% 98% / 0.24;
-  --glass-shadow-heavy: 0 18px 48px hsl(0 0% 0% / 0.4);
+  --glass-border-heavy: 40 20% 98% / 0.24;
+  --glass-shadow-heavy: 0 18px 48px hsl(20 14% 0% / 0.4);
 
-  --overlay-scrim: 0 0% 0% / 0.6;
+  --overlay-scrim: 20 14% 0% / 0.6;
 }
 
 /* ─── Tailwind v4 Theme Extension ───────────────────── */
@@ -186,6 +193,10 @@
 
   --color-success: var(--success);
   --color-warning: var(--warning);
+
+  /* Secondary accent — Rose Gold */
+  --color-accent-secondary: var(--accent-secondary);
+  --color-accent-secondary-foreground: var(--accent-secondary-foreground);
 
   /* Surface elevation colors */
   --color-surface-1: var(--surface-1);
@@ -407,6 +418,18 @@
 
 .accent-gradient-text {
   background: linear-gradient(135deg, hsl(var(--accent-gradient-from)), hsl(var(--accent-gradient-to)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Rose Gold accent gradient */
+.accent-gradient-secondary {
+  background: linear-gradient(135deg, hsl(var(--accent-secondary)), hsl(var(--accent)));
+}
+
+.accent-gradient-secondary-text {
+  background: linear-gradient(135deg, hsl(var(--accent-secondary)), hsl(var(--accent)));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

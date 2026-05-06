@@ -1,7 +1,7 @@
 import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
-import { getOrderById, updateOrderStatus } from "@/lib/db/queries/orders";
+import { getOrderById, updateOrderStatus, type OrderStatus } from "@/lib/db/queries/orders";
 import { getStoreConfig } from "@/lib/db/queries/store";
 import { sendEmail, generateOrderStatusUpdateHtml } from "@/lib/email";
 import { apiResponse, apiError } from "@/lib/api-response";
@@ -43,7 +43,8 @@ export async function PATCH(
     const { status } = parsed.data;
 
     // H1 FIX: Check for null return (order not found)
-    const order = await updateOrderStatus(id, status);
+    // MEDIUM-2 FIX: Cast validated status to OrderStatus type
+    const order = await updateOrderStatus(id, status as OrderStatus);
     if (!order) return apiError("Order not found", 404);
 
     // Send status update email for shipped/delivered/cancelled

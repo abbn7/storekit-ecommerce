@@ -6,8 +6,8 @@ import { apiPaginatedResponse, apiError } from "@/lib/api-response";
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "12");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "12")));
     const collection = searchParams.get("collection") || undefined;
     const search = searchParams.get("search") || undefined;
     const sort = (searchParams.get("sort") as "newest" | "price_asc" | "price_desc" | "name") || undefined;

@@ -326,7 +326,7 @@ export function HeroSection({ banners }: HeroSectionProps) {
                 </motion.p>
               )}
 
-              {/* CTA button */}
+              {/* CTA button — luxury accent gradient */}
               {current.ctaLink && (
                 <motion.div
                   variants={ctaVariants}
@@ -337,7 +337,7 @@ export function HeroSection({ banners }: HeroSectionProps) {
                   <Button
                     asChild
                     size="lg"
-                    className="bg-white text-foreground hover:bg-white/90 px-8 py-6 text-xs tracking-[0.2em] uppercase font-medium rounded-lg shadow-lg"
+                    className="accent-gradient text-white hover:opacity-90 px-8 py-6 text-xs tracking-[0.2em] uppercase font-medium rounded-lg shadow-lg border-0"
                   >
                     <Link href={current.ctaLink}>
                       {current.ctaText || "Shop Now"}

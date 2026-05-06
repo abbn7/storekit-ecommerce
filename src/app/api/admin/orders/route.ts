@@ -10,8 +10,8 @@ export async function GET(request: NextRequest) {
     if (!isAuth) return apiError("Unauthorized", 401);
 
     const { searchParams } = new URL(request.url);
-    const page = Number(searchParams.get("page")) || 1;
-    const limit = Number(searchParams.get("limit")) || 20;
+    const page = Math.max(1, Number(searchParams.get("page")) || 1);
+    const limit = Math.min(100, Math.max(1, Number(searchParams.get("limit")) || 20));
     const status = searchParams.get("status") || undefined;
 
     const orders = await getOrders(page, limit, status);

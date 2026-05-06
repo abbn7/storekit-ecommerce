@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { uploadImage } from "@/lib/cloudinary";
 import { apiResponse, apiError } from "@/lib/api-response";
-import { MAX_UPLOAD_SIZE, ALLOWED_MIME_TYPES } from "@/lib/validations";
+import { MAX_UPLOAD_SIZE, ALLOWED_MIME_TYPES, validateFileSignature } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,9 +23,16 @@ export async function POST(request: NextRequest) {
       return apiError(`File too large. Maximum size is ${MAX_UPLOAD_SIZE / 1024 / 1024}MB`, 400);
     }
 
-    // Validate MIME type
+    // Validate MIME type from browser
     if (!ALLOWED_MIME_TYPES.includes(file.type as typeof ALLOWED_MIME_TYPES[number])) {
       return apiError(`Invalid file type. Allowed: ${ALLOWED_MIME_TYPES.join(", ")}`, 400);
+    }
+
+    // HIGH-3 FIX: Validate file magic numbers to prevent MIME type spoofing
+    const signatureCheck = await validateFileSignature(file);
+    if (!signatureCheck.valid) {
+      logger.warn(`Upload rejected: MIME type spoofing detected. Declared: ${file.type}, Detected: ${signatureCheck.detectedType || "unknown"}`);
+      return apiError("File content does not match declared type. Possible spoofing attempt.", 400);
     }
 
     // Validate folder name (prevent path traversal)

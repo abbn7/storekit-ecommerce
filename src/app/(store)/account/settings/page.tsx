@@ -1,5 +1,5 @@
-import { logger } from "@/lib/logger";
 "use client";
+import { logger } from "@/lib/logger";
 
 import { useState } from "react";
 import { useUser } from "@clerk/nextjs"; // M9 FIX: Import useUser for Clerk integration

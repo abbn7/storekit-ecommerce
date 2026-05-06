@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Search, ShoppingBag, Heart, Menu, X, User, LayoutDashboard } from "lucide-react";
+import { ThemeToggle } from "@/components/store/ThemeToggle";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
 import { useCartStore } from "@/stores/cartStore";
 import { useUIStore } from "@/stores/uiStore";
@@ -107,6 +108,8 @@ export function Navbar({ storeName, logoUrl }: NavbarProps) {
             >
               <Search className="h-5 w-5" />
             </motion.button>
+
+            <ThemeToggle isScrolled={isScrolled} />
 
             <Link
               href="/account/wishlist"

@@ -4,8 +4,8 @@ import { products, productImages, productVariants, productCollections, collectio
 import type { ProductFilters } from "@/types";
 
 export async function getProducts(filters?: ProductFilters & { includeInactive?: boolean }) {
-  const page = filters?.page ?? 1;
-  const limit = filters?.limit ?? 12;
+  const page = Math.max(1, filters?.page ?? 1);
+  const limit = Math.min(100, Math.max(1, filters?.limit ?? 12));
   const offset = (page - 1) * limit;
 
   const conditions = filters?.includeInactive ? [] : [eq(products.isActive, true)];
@@ -43,22 +43,29 @@ export async function getProducts(filters?: ProductFilters & { includeInactive?:
       .offset(offset);
 
     // C3 FIX: Batch-fetch images for products returned by collection filter
+    // MEDIUM-6 FIX: Also batch-fetch variants (previously returned empty [])
     const productIds = result.map((p) => p.id);
     if (productIds.length > 0) {
-      const allImages = await db
-        .select({
-          productId: productImages.productId,
-          id: productImages.id,
-          url: productImages.url,
-          altText: productImages.altText,
-          width: productImages.width,
-          height: productImages.height,
-          isPrimary: productImages.isPrimary,
-          sortOrder: productImages.sortOrder,
-        })
-        .from(productImages)
-        .where(inArray(productImages.productId, productIds))
-        .orderBy(productImages.sortOrder);
+      const [allImages, allVariants] = await Promise.all([
+        db
+          .select({
+            productId: productImages.productId,
+            id: productImages.id,
+            url: productImages.url,
+            altText: productImages.altText,
+            width: productImages.width,
+            height: productImages.height,
+            isPrimary: productImages.isPrimary,
+            sortOrder: productImages.sortOrder,
+          })
+          .from(productImages)
+          .where(inArray(productImages.productId, productIds))
+          .orderBy(productImages.sortOrder),
+        db
+          .select()
+          .from(productVariants)
+          .where(inArray(productVariants.productId, productIds)),
+      ]);
 
       const imagesByProductId = new Map<string, typeof allImages>();
       for (const img of allImages) {
@@ -67,10 +74,17 @@ export async function getProducts(filters?: ProductFilters & { includeInactive?:
         imagesByProductId.set(img.productId, existing);
       }
 
+      const variantsByProductId = new Map<string, typeof allVariants>();
+      for (const variant of allVariants) {
+        const existing = variantsByProductId.get(variant.productId) ?? [];
+        existing.push(variant);
+        variantsByProductId.set(variant.productId, existing);
+      }
+
       return result.map((product) => ({
         ...product,
         images: imagesByProductId.get(product.id) ?? [],
-        variants: [],
+        variants: variantsByProductId.get(product.id) ?? [],
       }));
     }
 
@@ -122,23 +136,29 @@ export async function getProducts(filters?: ProductFilters & { includeInactive?:
     .limit(limit)
     .offset(offset);
 
-  // Batch-fetch images for all products to maintain consistent return shape
+  // Batch-fetch images and variants for all products to maintain consistent return shape
   const productIds = result.map((p) => p.id);
   if (productIds.length > 0) {
-    const allImages = await db
-      .select({
-        productId: productImages.productId,
-        id: productImages.id,
-        url: productImages.url,
-        altText: productImages.altText,
-        width: productImages.width,
-        height: productImages.height,
-        isPrimary: productImages.isPrimary,
-        sortOrder: productImages.sortOrder,
-      })
-      .from(productImages)
-      .where(inArray(productImages.productId, productIds))
-      .orderBy(productImages.sortOrder);
+    const [allImages, allVariants] = await Promise.all([
+      db
+        .select({
+          productId: productImages.productId,
+          id: productImages.id,
+          url: productImages.url,
+          altText: productImages.altText,
+          width: productImages.width,
+          height: productImages.height,
+          isPrimary: productImages.isPrimary,
+          sortOrder: productImages.sortOrder,
+        })
+        .from(productImages)
+        .where(inArray(productImages.productId, productIds))
+        .orderBy(productImages.sortOrder),
+      db
+        .select()
+        .from(productVariants)
+        .where(inArray(productVariants.productId, productIds)),
+    ]);
 
     const imagesByProductId = new Map<string, typeof allImages>();
     for (const img of allImages) {
@@ -147,10 +167,17 @@ export async function getProducts(filters?: ProductFilters & { includeInactive?:
       imagesByProductId.set(img.productId, existing);
     }
 
+    const variantsByProductId = new Map<string, typeof allVariants>();
+    for (const variant of allVariants) {
+      const existing = variantsByProductId.get(variant.productId) ?? [];
+      existing.push(variant);
+      variantsByProductId.set(variant.productId, existing);
+    }
+
     return result.map((product) => ({
       ...product,
       images: imagesByProductId.get(product.id) ?? [],
-      variants: [],
+      variants: variantsByProductId.get(product.id) ?? [],
     }));
   }
 

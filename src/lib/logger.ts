@@ -3,14 +3,14 @@
  * Suppresses logs in test environment, shows errors in production, everything in dev
  */
 export const logger = {
-  error: (message: string, ...args: unknown[]) => {
+  error: (message: unknown, ...args: unknown[]) => {
     if (process.env.NODE_ENV !== "test") {
-      console.error(`[ERROR] ${message}`, ...args);
+      console.error(`[ERROR] ${typeof message === "string" ? message : String(message)}`, ...args);
     }
   },
-  warn: (message: string, ...args: unknown[]) => {
+  warn: (message: unknown, ...args: unknown[]) => {
     if (process.env.NODE_ENV !== "test") {
-      console.warn(`[WARN] ${message}`, ...args);
+      console.warn(`[WARN] ${typeof message === "string" ? message : String(message)}`, ...args);
     }
   },
   info: (message: string, ...args: unknown[]) => {
